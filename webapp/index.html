@@ -11,7 +11,7 @@
         <form name="login">
             Lat <input type="number" name="newLat"/>
             Long <input type="number" name="newLong"/>
-            <input type="button" onclick="addPoint(this.form)" value="Add Point"/>
+            <input type="button" onclick="submitPoint(this.form)" value="Add Point"/>
             <input type="reset" value="Cancel"/>
         </form>
         <p>Sample points:</p>
@@ -19,22 +19,41 @@
         <p>@39.643279,-79.960964</p>
 
         <script language="javascript">
+            var markercounter = 0;
+            var map;
             function myMap() {
                 var mapProp= {
                     center:new google.maps.LatLng(39.643217,-79.960964),
                     zoom:13,
                 };
-                var map=new google.maps.Map(document.getElementById("googleMap"),mapProp);
+                map=new google.maps.Map(document.getElementById("googleMap"),mapProp);
             }
 
-             function addPoint(form) { 
+            google.maps.event.addDomListener(window, 'load', myMap);
+            function submitPoint(form){
+               dropPoint(form.newLat.value, form.newLong.value)
+            }
+            function dropPoint(lat, lng) { 
+                var infowindow = new google.maps.InfoWindow();
+                var newLatLng = new google.maps.LatLng(lat, lng);
+
                 var marker = new google.maps.Marker({
-                    position:new google.maps.LatLng(form.newLat.value,form.newLong.value),
+                    position:newLatLng,
+                    map: map,
+                    animation: google.maps.Animation.DROP,
                 });
 
+                markercount++;
+                google.maps.event.addListener,'click',(function(marker,markercount){
+                    return function(){
+                        infowindow.setcontent(markercount);
+                        infowindow.open(map,marker);
+                    }
+                })(marker,markercount);
+                map.pan(newLatLng);
                 marker.setMap(map);
             }
-
+            
        </script>
 
         
