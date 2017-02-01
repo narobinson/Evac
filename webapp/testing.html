@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+    <body>
+
+        <h1>Google Point Map</h1>
+
+        <div id="googleMap" style="width:100%;height:400px;"></div>
+
+        <h3>Add points</h3>
+
+        <form name="latlong">
+            Lat <input type="number" name="newLat"/>
+            Long <input type="number" name="newLong"/>
+            <input type="button" onclick="addPoint(this.form)" value="Add Point"/>
+            <input type="reset" value="Cancel"/>
+        </form>
+        <p>Sample points:</p>
+        <p>@39.643279,-79.960964</p>
+
+        <script language="javascript">
+            var markercount=0;
+//            var map;
+            
+            // Map initializer
+            function mapInit() {
+                var mapProp= {
+                    center:new google.maps.LatLng(39.643217,-79.960964),
+                    zoom:13,
+                };
+                var map=new google.maps.Map(document.getElementById("googleMap"),mapProp);
+            }
+
+            // Load map on page load
+//            google.maps.event.addDomListener(window, 'load', mapInit);
+
+/*
+            // Add pin function
+            function addPoint(form) { 
+                var infowindow = new google.maps.InfoWindow();
+                var newLatLng = new google.mapsLatLng(form.newLat.value,form.newLong.value);
+                var marker = new google.maps.Marker({
+                    position: newLatLng,
+                    map: map,
+                    animation: google.maps.Animation.DROP,
+                });
+                
+                markercount++;
+                google.maps.event.addListener(marker, 'click', (function(marker,markercount){
+                    return function(){
+                        infowindow.setcontent(markercount);
+                        infowindow.open(map,marker);
+                    }
+                })(marker,markercount);
+            
+                map.pan(newLatLng);
+            }
+*/
+       </script>
+
+        
+        <script src="https://maps.googleapis.com/maps/api/js?callback=myMap"></script>
+
+    </body>
+<!--
+CREDITS
+    Crapload of HTML stuff: w3schools.com
+    Dynamic map pins: See more at: https://www.sundoginteractive.com/blog/working-with-dynamic-markers-in-google-maps-js-api#sthash.wpu9rLRy.dpuf
+-->
+</html>
