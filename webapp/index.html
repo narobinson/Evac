@@ -21,7 +21,7 @@
 
 
         <script language="javascript">
-            var markercounter = 0;
+            var markercount = 0;
             var map;
             function myMap() {
                 var mapProp= {
@@ -36,7 +36,6 @@
                dropPoint(form.newLat.value, form.newLong.value)
             }
             function dropPoint(lat, lng) { 
-                var infowindow = new google.maps.InfoWindow();
                 var newLatLng = new google.maps.LatLng(lat, lng);
 
                 var marker = new google.maps.Marker({
@@ -45,14 +44,16 @@
                     animation: google.maps.Animation.DROP,
                 });
 
+                var infowindow = new google.maps.InfoWindow({
+                    content: '<h3>Marker #'+markercount.toString()+'</h3>'+
+                             '<p>Population: '+Math.floor((Math.random() * 1000) + 1).toString() +'</p>'
+                });
+
+                marker.addListener('click',function(){
+                    infowindow.open(map,marker);
+                });
                 markercount++;
-                google.maps.event.addListener,'click',(function(marker,markercount){
-                    return function(){
-                        infowindow.setcontent(markercount);
-                        infowindow.open(map,marker);
-                    }
-                })(marker,markercount);
-                map.pan(newLatLng);
+                map.panTo(newLatLng);
                 marker.setMap(map);
             }
             
