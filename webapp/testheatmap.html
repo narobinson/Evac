@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&libraries=visualization"></script>
+        <script>
+var map, heatmap;
+//var markercount =0; 
+// a shortened version of the data for Google's taxi example
+var pointData = [
+    new google.maps.LatLng(39.6446268, -80.0003815),
+    new google.maps.LatLng(39.6562542, -79.9594877),
+    new google.maps.LatLng(39.6562542, -79.9594877),
+    new google.maps.LatLng(39.6562542, -79.9594877),
+    new google.maps.LatLng(39.6562542, -79.9594877),
+    new google.maps.LatLng(39.6562542, -79.9594877),
+    new google.maps.LatLng(39.6441022, -79.9200768)
+  // ...
+];
+ 
+ 
+function start() {
+  // the map's options
+  var mapProp = {
+    zoom: 13,
+    center: new google.maps.LatLng(39.643217, -79.960964)
+  };
+ 
+  // the map and where to place it
+  map = new google.maps.Map(document.getElementById('googleMap'), mapProp);
+ 
+  var pointArray = new google.maps.MVCArray(pointData);
+ 
+  // what data for the heatmap and how to display it
+
+  heatmap = new google.maps.visualization.HeatmapLayer({
+    data: pointArray,
+    radius: 50
+  });
+ 
+  // placing the heatmap on the map
+  heatmap.setMap(map);
+}
+/*
+function submitPoint(form){
+    dropPoint(form.newLat.value, form.newLong.value)
+
+function dropPoint(lat,lng){
+    var newLatLng = new google.maps.LatLng(lat,lng);
+    pointData.push(newLatLng);
+    var marker = new google.maps.Marker({
+        position:newLatLng,
+        map: map,
+        animation: google.maps.Animation.DROP,
+    });
+
+    var infowindow = new google.maps.InfoWindow({
+        content: '<h3>Marker #'+markercount.toString()+'</h3>'+
+                 '<p>Population: '+Math.floor((Math.random() *1000) +1).toString() +'</p>'
+    });
+
+    marker.addListener('click',function(){
+        infowindow.open(map,marker);
+    });
+    markercount++;
+    map.panTo(newLatLng);
+    marker.setMap(map)
+   
+}
+*/
+// as soon as the document is ready the map is initialized
+google.maps.event.addDomListener(window, 'load', start);
+ 
+        </script>
+    </head>
+    <body>
+        <h1>Google Heat Map</h1>
+        <div id="googleMap" style="width=100%;height=400px;"></div>
+
+        <h3>Add Points</h3>
+
+<!--
+        <form name = "pointDropper">
+            Lat <input type="number" name="newLat"/>
+            Long <input type="number" name="newLong"/>
+            <input type="button" onclick="submitPoint(this.form)" value="Add Point"/>
+            <input type="reset" value="Cancel"/>
+        </form>
+        <p>Sample points:</p>
+        <p>University Town Center: <input type="button" onclick="dropPoint(39.6446268, -80.0003815)" value="Drop"/></p>
+        <p>Heath Sciences Campus: <input type="button" onclick="dropPoint(39.6562542, -79.9594877)" value="Drop"/></p>
+        <p>Morgantown Airport: <input type="button" onclick="dropPoint(39.6441022, -79.9200768)" value="Drop"/></p>   
+-->
+
+    </body>
+</html>
