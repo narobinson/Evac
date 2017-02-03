@@ -32,7 +32,8 @@ function initialize() {
   // what data for the heatmap and how to display it
   heatmap = new google.maps.visualization.HeatmapLayer({
     data: pointArray,
-    radius: 35
+    radius: 20,
+    dissipating: true
   });
  
   map.addListener('click',function(e){
@@ -52,7 +53,7 @@ function dropPoint(newLatLng, population) {
         if(population == 0){
             population = Math.floor((Math.random()*100+1));
         } 
-        pointData.push({location: newLatLng, weight: population/10});
+        pointData.push({location: newLatLng, weight: population/20});
         var marker = new google.maps.Marker({
             position:newLatLng,
             map: map,
