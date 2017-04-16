@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-configuration PUBLIC
+		"-//Hibernate/Hibernate Configuration DTD 3.0//EN"
+		"http://www.hibernate.org/dtd/hibernate-configuration-3.0.dtd">
+<hibernate-configuration>
+    <session-factory>
+        <property name="hibernate.dialect">org.hibernate.dialect.SQLServer2008Dialect</property>
+        <property name="hibernate.connection.driver_class">com.microsoft.sqlserver.jdbc.SQLServerDriver</property>
+        <property name="hibernate.connection.url">jdbc:sqlserver://urbanevac.database.windows.net:1433;database=urbanevac;user=aiadmin@urbanevac;password=asd5@#JH$3h;encrypt=true;trustServerCertificate=false;hostNameInCertificate=*.database.windows.net;loginTimeout=30;</property>
+        <property name="hibernate.connection.username">aiadmin@urbanevac</property>
+        <property name="hibernate.connection.password">asd5@#JH$3h</property>
+        <property name="transaction.factory_class">org.hibernate.transaction.JDBCTransactionFactory</property>
+
+        <property name="hibernate.cache.use_second_level_cache">false</property>
+        <property name="hibernate.cache.provider_class">org.hibernate.cache.NoCacheProvider</property>
+        <property name="hibernate.cache.use_query_cache">false</property>
+        
+        <property name="connection.autocommit">true</property>
+        
+        <property name="show_sql">false</property>
+        <property name="format_sql">false</property>
+    </session-factory>
+</hibernate-configuration>
