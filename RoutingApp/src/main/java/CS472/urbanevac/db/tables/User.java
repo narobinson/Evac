@@ -8,8 +8,12 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
+
+import org.hibernate.annotations.Cascade;
+import org.hibernate.annotations.CascadeType;
 
 @Entity
 @Table(name = "[dbo].[User]")
@@ -28,12 +32,14 @@ public class User {
 	@Column(name = "uid")
 	private UUID uid;
 
-	@OneToOne
-	@JoinColumn(name = "id")
+	@ManyToOne
+	@JoinColumn(name = "userGroup", referencedColumnName = "id")
+	@Cascade({CascadeType.SAVE_UPDATE})
 	private UserLocationGroup userGroup;
 
 	@OneToOne
 	@JoinColumn(name = "id")
+	@Cascade({CascadeType.SAVE_UPDATE})
 	private UserRoute route;
 	
 	/**

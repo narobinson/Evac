@@ -17,6 +17,12 @@ public class Route {
 	@Autowired
 	private Database db;
 	
+	/**
+	 * Closes a way with the given ID
+	 * 
+	 * @param id
+	 * @return
+	 */
 	@RequestMapping("/close/{id}")
 	public @ResponseBody boolean closeRoad(@PathVariable long id) {
 		boolean closed = db.closeWay(id);
@@ -26,11 +32,24 @@ public class Route {
 		return closed;
 	}
 	
+	/**
+	 * Opens a way with the given ID
+	 * 
+	 * @param id
+	 * @return
+	 */
 	@RequestMapping("/open/{id}")
 	public @ResponseBody boolean openRoad(@PathVariable long id) {
 		return db.openWay(id);
 	}
 	
+	
+	/**
+	 * Gets the current route for the specified UID
+	 * 
+	 * @param uid
+	 * @return
+	 */
 	@RequestMapping("/{uid}")
 	public @ResponseBody UserRoute getRoute(@PathVariable UUID uid) {
 		UserRoute route = db.getUserByUUID(uid).getRoute();

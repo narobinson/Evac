@@ -157,6 +157,10 @@ public class Way {
 		this.nodes = nodes.stream().mapToLong((Node n) -> n.getId()).toArray();
 	}
 	
+	public boolean isClosed() {
+		return this.tags != null && Boolean.parseBoolean(this.tags.get("closed"));
+	}
+	
 	@Override
 	public String toString() {
 		String ret = String.format(

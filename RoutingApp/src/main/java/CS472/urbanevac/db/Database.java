@@ -19,6 +19,7 @@ import CS472.urbanevac.db.tables.Way;
 @Component
 @SuppressWarnings("unchecked")
 public class Database {
+	// Try to avoid using this call
 	public static Database INSTANCE;
 
 	@Autowired
@@ -34,7 +35,7 @@ public class Database {
 		Session session = dbc.getPostgresSession().openSession();
 		session.beginTransaction();
 
-		List<Node> nodes = (List<Node>) session.createQuery("SELECT n FROM Node n").list();
+		List<Node> nodes = session.createQuery("SELECT n FROM Node n").list();
 
 		session.getTransaction().commit();
 		session.close();
@@ -65,7 +66,7 @@ public class Database {
 		Session session = dbc.getPostgresSession().openSession();
 		session.beginTransaction();
 
-		List<Node> nodes = (List<Node>) session.createQuery("SELECT n FROM Node n WHERE n.id IN :idList")
+		List<Node> nodes = session.createQuery("SELECT n FROM Node n WHERE n.id IN :idList")
 				.setParameterList("idList", ids).list();
 
 		session.getTransaction().commit();
@@ -80,11 +81,11 @@ public class Database {
 		Session session = dbc.getMSSqlSession().openSession();
 		session.beginTransaction();
 
-		List<User> users = (List<User>) session.createQuery("SELECT u FROM User u").list();
+		List<User> users = session.createQuery("SELECT u FROM User u").list();
 
 		session.getTransaction().commit();
 		session.close();
-
+		
 		return users;
 	}
 
@@ -126,28 +127,29 @@ public class Database {
 		return user;
 	}
 
-	public boolean addOrUpdateUserLocation(UUID uid, double ulat, double ulon) {
+	public User addOrUpdateUserLocation(UUID uid, double ulat, double ulon) {
 		double glat = Math.floor(ulat * 10000) / 10000;
 		double glon = Math.floor(ulon * 10000) / 10000;
 		
 		Session session = dbc.getMSSqlSession().openSession();
 		session.beginTransaction();
 
+		User user = null;
+		UserLocationGroup newGroup = null;
+		UserLocationGroup prevGroup = null;
+		
 		// Check to see if the user is already in the database
 		try {
-			User user = (User) session.createQuery("SELECT u FROM User u WHERE u.uid = :uid")
+			user = (User) session.createQuery("SELECT u FROM User u WHERE u.uid = :uid")
 				.setParameter("uid", uid).getSingleResult();
 			
 			// This person already exists
 			System.out.println("Person with GUID: " + uid + " already exists");
 
-			// Get the group this person belonged to so it can be updated if
-			// necessary.
-			UserLocationGroup prevGroup = user.getUserLocationGroup();
-
 			// getUserLocationGroupByLatLon
-			UserLocationGroup newGroup = null;
-
+			newGroup = null;
+			prevGroup = user.getUserLocationGroup();
+			
 			try {
 				newGroup = (UserLocationGroup) session
 						.createQuery("SELECT u FROM UserLocationGroup u WHERE u.lat = :lat AND u.lon = :lon")
@@ -167,58 +169,52 @@ public class Database {
 			// Update the location
 			user.setLat(ulat);
 			user.setLon(ulon);
-
+			
 			// If the user moved to a new group, update the counts
 			if (prevGroup.getId() != newGroup.getId()) {
 				prevGroup.decrementCount();
 				newGroup.incrementCount();
 				
 				user.setUserLocationGroup(newGroup);
-				
-				session.update(user);
 			}
 		} catch (NoResultException e) {
 			// This person didn't exist, add them
 			System.out.println("Adding new person with GUID: " + uid);
 
-			// Get the group location
-			// getUserLocationGroupByLatLon
-			UserLocationGroup group = null;
-
 			try {
-				group = (UserLocationGroup) session
+				newGroup = (UserLocationGroup) session
 						.createQuery("SELECT u FROM UserLocationGroup u WHERE u.lat = :lat AND u.lon = :lon")
 						.setParameter("lat", glat).setParameter("lon", glon).getSingleResult();
 			} catch (NoResultException e1) {
 				// Didn't exist, so create it
 				System.out.println("Did not find a group for lat: " + glat + " lon: " + glon);
 
-				group = new UserLocationGroup();
-				group.setLat(glat);
-				group.setLon(glon);
-				group.setCount(0);
+				newGroup = new UserLocationGroup();
+				newGroup.setLat(glat);
+				newGroup.setLon(glon);
+				newGroup.setCount(0);
 
-				session.persist(group);
+				session.persist(newGroup);
 			}
 
 			// Create the user
-			User user = new User();
+			user = new User();
 			user.setLat(ulat);
 			user.setLon(ulon);
 			user.setUid(uid);
-			user.setUserLocationGroup(group);
+			user.setUserLocationGroup(newGroup);
 
 			// Add the user to the group location count
-			group.incrementCount();
+			newGroup.incrementCount();
 
 			// Add it to the database
 			session.persist(user);
 		}
-
+		
 		session.getTransaction().commit();
 		session.close();
 
-		return true;
+		return user;
 	}
 	/* User */
 
@@ -227,7 +223,7 @@ public class Database {
 		Session session = dbc.getMSSqlSession().openSession();
 		session.beginTransaction();
 		
-		List<UserLocationGroup> groups = (List<UserLocationGroup>) session
+		List<UserLocationGroup> groups = session
 				.createQuery("SELECT g FROM UserLocationGroup g").list();
 		
 		session.getTransaction().commit();
@@ -301,7 +297,7 @@ public class Database {
 		Session session = dbc.getMSSqlSession().openSession();
 		session.beginTransaction();
 		
-		List<UserRoute> routes = (List<UserRoute>) session.createQuery("SELECT r FROM UserRoute r").list();
+		List<UserRoute> routes = session.createQuery("SELECT r FROM UserRoute r").list();
 		
 		session.getTransaction().commit();
 		session.close();
@@ -334,7 +330,7 @@ public class Database {
 		Session session = dbc.getPostgresSession().openSession();
 		session.beginTransaction();
 		
-		List<Way> ret = (List<Way>) session.createQuery("SELECT w FROM Way w").list();
+		List<Way> ret = session.createQuery("SELECT w FROM Way w").list();
 		
 		session.getTransaction().commit();
 		session.close();
