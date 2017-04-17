@@ -11,6 +11,8 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
@@ -28,6 +30,16 @@ import CS472.urbanevac.db.types.LongArrayUserType;
 @TypeDefs({
 	@TypeDef(name = "hstore", typeClass = HstoreUserType.class),
 	@TypeDef(name = "longArray", typeClass = LongArrayUserType.class)
+})
+@NamedQueries({
+	@NamedQuery(
+		name = "getAllWays",
+		query = "SELECT w FROM Way w"
+	),
+	@NamedQuery(
+		name = "getWayById",
+		query = "SELECT w FROM Way w WHERE w.id = :id"
+	)
 })
 public class Way {
 	@Id

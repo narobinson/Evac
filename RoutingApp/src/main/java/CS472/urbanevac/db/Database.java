@@ -35,7 +35,9 @@ public class Database {
 		Session session = dbc.getPostgresSession().openSession();
 		session.beginTransaction();
 
-		List<Node> nodes = session.createQuery("SELECT n FROM Node n").list();
+		List<Node> nodes = session
+				.getNamedQuery("getAllNodes")
+				.list();
 
 		session.getTransaction().commit();
 		session.close();
@@ -50,8 +52,11 @@ public class Database {
 		Node node = null;
 
 		try {
-			node = (Node) session.createQuery("SELECT n FROM Node n WHERE n.id = :id").setParameter("id", id)
+			node = (Node) session
+					.getNamedQuery("getNodeById")
+					.setParameter("id", id)
 					.getSingleResult();
+			
 		} catch (NoResultException e) {
 			// Do nothing, node is null
 		}
@@ -66,8 +71,10 @@ public class Database {
 		Session session = dbc.getPostgresSession().openSession();
 		session.beginTransaction();
 
-		List<Node> nodes = session.createQuery("SELECT n FROM Node n WHERE n.id IN :idList")
-				.setParameterList("idList", ids).list();
+		List<Node> nodes = session
+				.getNamedQuery("getNodeByIds")
+				.setParameterList("idList", ids)
+				.list();
 
 		session.getTransaction().commit();
 		session.close();
@@ -81,7 +88,9 @@ public class Database {
 		Session session = dbc.getMSSqlSession().openSession();
 		session.beginTransaction();
 
-		List<User> users = session.createQuery("SELECT u FROM User u").list();
+		List<User> users = session
+				.getNamedQuery("getAllUsers")
+				.list();
 
 		session.getTransaction().commit();
 		session.close();
@@ -96,8 +105,11 @@ public class Database {
 		User user = null;
 
 		try {
-			user = (User) session.createQuery("SELECT u FROM User u WHERE u.id = :id").setParameter("id", id)
+			user = (User) session
+					.getNamedQuery("getUserById")
+					.setParameter("id", id)
 					.getSingleResult();
+			
 		} catch (NoResultException e) {
 			// Do nothing, user is null
 		}
@@ -115,8 +127,11 @@ public class Database {
 		User user = null;
 
 		try {
-			user = (User) session.createQuery("SELECT u FROM User u WHERE u.uid = :uid").setParameter("uid", uid)
+			user = (User) session
+					.getNamedQuery("getUserByUUID")
+					.setParameter("uid", uid)
 					.getSingleResult();
+			
 		} catch (NoResultException e) {
 			// Do nothing, user is null
 		}
@@ -140,8 +155,10 @@ public class Database {
 		
 		// Check to see if the user is already in the database
 		try {
-			user = (User) session.createQuery("SELECT u FROM User u WHERE u.uid = :uid")
-				.setParameter("uid", uid).getSingleResult();
+			user = (User) session
+					.getNamedQuery("getUserByUUID")
+					.setParameter("uid", uid)
+					.getSingleResult();
 			
 			// This person already exists
 			System.out.println("Person with GUID: " + uid + " already exists");
@@ -152,8 +169,11 @@ public class Database {
 			
 			try {
 				newGroup = (UserLocationGroup) session
-						.createQuery("SELECT u FROM UserLocationGroup u WHERE u.lat = :lat AND u.lon = :lon")
-						.setParameter("lat", glat).setParameter("lon", glon).getSingleResult();
+						.getNamedQuery("getUserLocationGroupByLatLon")
+						.setParameter("lat", glat)
+						.setParameter("lon", glon)
+						.getSingleResult();
+				
 			} catch (NoResultException e) {
 				// Didn't exist, so create it
 				System.out.println("Did not find a group for lat: " + glat + " lon: " + glon);
@@ -183,8 +203,11 @@ public class Database {
 
 			try {
 				newGroup = (UserLocationGroup) session
-						.createQuery("SELECT u FROM UserLocationGroup u WHERE u.lat = :lat AND u.lon = :lon")
-						.setParameter("lat", glat).setParameter("lon", glon).getSingleResult();
+						.getNamedQuery("getUserLocationGroupByLatLon")
+						.setParameter("lat", glat)
+						.setParameter("lon", glon)
+						.getSingleResult();
+				
 			} catch (NoResultException e1) {
 				// Didn't exist, so create it
 				System.out.println("Did not find a group for lat: " + glat + " lon: " + glon);
@@ -224,7 +247,8 @@ public class Database {
 		session.beginTransaction();
 		
 		List<UserLocationGroup> groups = session
-				.createQuery("SELECT g FROM UserLocationGroup g").list();
+				.getNamedQuery("getAllUserLocationGroups")
+				.list();
 		
 		session.getTransaction().commit();
 		session.close();
@@ -240,8 +264,10 @@ public class Database {
 		
 		try {
 			group = (UserLocationGroup) session
-					.createQuery("SELECT u FROM UserLocationGroup u WHERE u.id = :id").setParameter("id", id)
+					.getNamedQuery("getUserLocationGroupById")
+					.setParameter("id", id)
 					.getSingleResult();
+			
 		} catch (NoResultException e) {
 			// Do nothing, group is null
 		}
@@ -271,8 +297,11 @@ public class Database {
 
 		try {
 			group = (UserLocationGroup) session
-					.createQuery("SELECT u FROM UserLocationGroup u WHERE u.lat = :lat AND u.lon = :lon")
-					.setParameter("lat", glat).setParameter("lon", glon).getSingleResult();
+					.getNamedQuery("getUserLocationGroupByLatLon")
+					.setParameter("lat", glat)
+					.setParameter("lon", glon)
+					.getSingleResult();
+			
 		} catch (NoResultException e) {
 			// Didn't exist, so create it
 			System.out.println("Did not find a group for lat: " + glat + " lon: " + glon);
@@ -297,7 +326,9 @@ public class Database {
 		Session session = dbc.getMSSqlSession().openSession();
 		session.beginTransaction();
 		
-		List<UserRoute> routes = session.createQuery("SELECT r FROM UserRoute r").list();
+		List<UserRoute> routes = session
+				.getNamedQuery("getAllUserRoutes")
+				.list();
 		
 		session.getTransaction().commit();
 		session.close();
@@ -312,8 +343,11 @@ public class Database {
 		UserRoute route = null;
 		
 		try {
-			route = (UserRoute) session.createQuery("SELECT u FROM UserRoute u WHERE u.id = :id")
-					.setParameter("id", id).getSingleResult();
+			route = (UserRoute) session
+					.getNamedQuery("getUserRouteById6")
+					.setParameter("id", id)
+					.getSingleResult();
+			
 		} catch (NoResultException e) {
 			// Do nothing, route is null
 		}
@@ -331,12 +365,16 @@ public class Database {
 		UserRoute route = null;
 
 		try {
-			User user = (User) session.createQuery("SELECT u FROM User u WHERE u.uid = :uid").setParameter("uid", uid)
+			User user = (User) session
+					.getNamedQuery("getUserByUUID")
+					.setParameter("uid", uid)
 					.getSingleResult();
 			
 			route = user.getRoute();
 			
-			Node node = (Node) session.createQuery("SELECT n FROM Node n WHERE n.id = :id").setParameter("id", nodeId)
+			Node node = (Node) session
+					.getNamedQuery("getNodeById")
+					.setParameter("id", nodeId)
 					.getSingleResult();
 			
 			if (route != null) {
@@ -358,7 +396,9 @@ public class Database {
 		Session session = dbc.getPostgresSession().openSession();
 		session.beginTransaction();
 		
-		List<Way> ret = session.createQuery("SELECT w FROM Way w").list();
+		List<Way> ret = session
+				.getNamedQuery("getAllWays")
+				.list();
 		
 		session.getTransaction().commit();
 		session.close();
@@ -373,8 +413,11 @@ public class Database {
 		Way way = null;
 		
 		try {
-			way = (Way) session.createQuery("SELECT w FROM Way w WHERE w.id = :id").setParameter("id", id)
+			way = (Way) session
+					.getNamedQuery("getWayById")
+					.setParameter("id", id)
 					.getSingleResult();
+			
 		} catch (NoResultException e) {
 			// Do nothing, way is null
 		}
@@ -392,7 +435,9 @@ public class Database {
 		Way way = null;
 		
 		try {
-			way = (Way) session.createQuery("SELECT w FROM Way w WHERE w.id = :id").setParameter("id", id)
+			way = (Way) session
+					.getNamedQuery("getWayById")
+					.setParameter("id", id)
 					.getSingleResult();
 
 			way.getTags().put("closed", Boolean.TRUE.toString());
@@ -413,7 +458,9 @@ public class Database {
 		Way way = null;
 		
 		try {
-			way = (Way) session.createQuery("SELECT w FROM Way w WHERE w.id = :id").setParameter("id", id)
+			way = (Way) session
+					.getNamedQuery("getWayById")
+					.setParameter("id", id)
 					.getSingleResult();
 			
 			way.getTags().put("closed", Boolean.FALSE.toString());

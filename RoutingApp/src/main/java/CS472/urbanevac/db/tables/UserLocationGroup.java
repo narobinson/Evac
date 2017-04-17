@@ -5,10 +5,26 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 
 @Entity
 @Table(name = "[dbo].[UserLocationGroup]")
+@NamedQueries({
+	@NamedQuery(
+		name = "getAllUserLocationGroups",
+		query = "SELECT g FROM UserLocationGroup g"
+	),
+	@NamedQuery(
+		name = "getUserLocationGroupById",
+		query = "SELECT u FROM UserLocationGroup u WHERE u.id = :id"
+	),
+	@NamedQuery(
+		name = "getUserLocationGroupByLatLon",
+		query = "SELECT u FROM UserLocationGroup u WHERE u.lat = :lat AND u.lon = :lon"
+	)
+})
 public class UserLocationGroup {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)

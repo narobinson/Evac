@@ -9,11 +9,27 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
 @Entity
 @Table(name = "[dbo].[User]")
+@NamedQueries({
+	@NamedQuery(
+		name = "getAllUsers",
+		query = "SELECT u FROM User u"
+	),
+	@NamedQuery(
+		name = "getUserById",
+		query = "SELECT u FROM User u WHERE u.id = :id"
+	),
+	@NamedQuery(
+		name = "getUserByUUID",
+		query = "SELECT u FROM User u WHERE u.uid = :uid"
+	)
+})
 public class User {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)

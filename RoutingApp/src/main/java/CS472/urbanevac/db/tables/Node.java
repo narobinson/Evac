@@ -8,6 +8,8 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
@@ -25,6 +27,20 @@ import CS472.urbanevac.db.types.HstoreUserType;
 @Table(name = "nodes")
 @TypeDefs({
 	@TypeDef(name = "hstore", typeClass = HstoreUserType.class)
+})
+@NamedQueries({
+	@NamedQuery(
+		name = "getAllNodes",
+		query = "SELECT n FROM Node n"
+	),
+	@NamedQuery(
+		name = "getNodeById",
+		query = "SELECT n FROM Node n WHERE n.id = :id"
+	),
+	@NamedQuery(
+		name = "getNodeByIds",
+		query = "SELECT n FROM Node n WHERE n.id IN :idList"
+	)
 })
 public class Node {
 	@Id
