@@ -15,6 +15,7 @@
 7. Use psql command-line tool to import data
 
 .\psql.exe -U postgres -f "D:\schema.sql" OSM
+
 .\psql.exe -U postgres -f "D:\data.sql" OSM
 
 ## Import Project in Eclipse
