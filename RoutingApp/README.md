@@ -52,5 +52,9 @@ BE SURE TO INCLUDE A '/' AT THE END OF ALL REQUESTS!
 Changes can be deployed by rebuilding and copying the new war file to the deployments folder - no server restart necessary.
 
 # Known Problems
-Wildfly will occasionally crash with "Out of metaspace" after re-deploying too many times.
-Restarting the server will fix it.
+
+### Wildfly will occasionally crash with "Out of metaspace" after re-deploying too many times. 
+* Restarting the server will fix it.
+
+### Some hibernate error complaing about not able to create a connection because of a Azure Firewall.
+* Exactly as it sounds. You must not be sitting on campus working on this. Let me know if this happens.
