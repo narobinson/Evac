@@ -75,49 +75,6 @@ public class API {
 	
 	@RequestMapping("/users/add/{lat}/{lon}/{uid}")
 	public @ResponseBody boolean addUserLocation(@PathVariable double lat, @PathVariable double lon, @PathVariable UUID uid) {
-		// Check to see if the user is already in the database
-		User previous = db.getUserByUUID(uid);
-
-		if (previous != null) {
-			// This person already exists
-			System.out.println("Person with GUID: " + uid + " already exists");
-
-			// Get the group this person belonged to so it can be updated if necessary.
-			UserLocationGroup prevGroup = previous.getUserGroup();
-			UserLocationGroup newGroup = db.getUserLocationGroupByLatLon(lat, lon);
-
-			// Update the location
-			previous.setLat(lat);
-			previous.setLon(lon);
-
-			// If the user moved to a new group, update the counts
-			if (prevGroup.getId() != newGroup.getId()) {
-				previous.setUserGroup(newGroup);
-				
-				prevGroup.decrementCount();
-				newGroup.incrementCount();
-			}
-		} else {
-			// This person didn't exist, add them
-			System.out.println("Adding new person with GUID: " + uid);
-
-			// Get the group location
-			UserLocationGroup group = db.getUserLocationGroupByLatLon(lat, lon);
-
-			// Create the user
-			User ul = new User();
-			ul.setLat(lat);
-			ul.setLon(lon);
-			ul.setUid(uid);
-			ul.setUserGroup(group);
-
-			// Add the user to the group location count
-			group.incrementCount();
-
-			// Add it to the database
-			db.persist(ul);
-		}
-
-		return true;
+		return db.addOrUpdateUserLocation(uid, lat, lon);
 	}
 }

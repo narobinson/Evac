@@ -95,14 +95,14 @@ public class User {
 	/**
 	 * @return the userGroup
 	 */
-	public UserLocationGroup getUserGroup() {
+	public UserLocationGroup getUserLocationGroup() {
 		return userGroup;
 	}
 
 	/**
 	 * @param userGroup the userGroup to set
 	 */
-	public void setUserGroup(UserLocationGroup userGroup) {
+	public void setUserLocationGroup(UserLocationGroup userGroup) {
 		this.userGroup = userGroup;
 	}
 	
