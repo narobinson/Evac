@@ -323,6 +323,34 @@ public class Database {
 
 		return route;
 	}
+	
+	public UserRoute updateLastVisitedNode(UUID uid, long nodeId) {
+		Session session = dbc.getMSSqlSession().openSession();
+		session.beginTransaction();
+
+		UserRoute route = null;
+
+		try {
+			User user = (User) session.createQuery("SELECT u FROM User u WHERE u.uid = :uid").setParameter("uid", uid)
+					.getSingleResult();
+			
+			route = user.getRoute();
+			
+			Node node = (Node) session.createQuery("SELECT n FROM Node n WHERE n.id = :id").setParameter("id", nodeId)
+					.getSingleResult();
+			
+			if (route != null) {
+				route.setLastVisitedNode(node);
+			}
+		} catch (NoResultException e) {
+			// Do nothing, user is null
+		}
+
+		session.getTransaction().commit();
+		session.close();
+
+		return route;
+	}
 	/* User Route */
 
 	/* Way */

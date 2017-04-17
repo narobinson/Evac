@@ -7,6 +7,8 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import CS472.urbanevac.db.Database;
+
 @Entity
 @Table(name = "[dbo].[UserRoute]")
 public class UserRoute {
@@ -18,6 +20,9 @@ public class UserRoute {
 	@Column(name = "route")
 	private String route;
 
+	@Column(name = "lastVisitedNode")
+	private Long lastVisitedNode;
+	
 	/**
 	 * @return the id
 	 */
@@ -46,11 +51,25 @@ public class UserRoute {
 		this.route = route;
 	}
 
+	/**
+	 * @return the lastVisitedNode
+	 */
+	public Node getLastVisitedNode() {
+		return this.lastVisitedNode == null ? null : Database.INSTANCE.getNodeById(this.lastVisitedNode);
+	}
+	
+	/**
+	 * @param lastVisitedNode the lastVisitedNode to set
+	 */
+	public void setLastVisitedNode(Node lastVisitedNode) {
+		this.lastVisitedNode = lastVisitedNode.getId();
+	}
+
 	@Override
 	public String toString() {
 		String ret = String.format(
-				"UserRoute[id='%d', route='%s']", 
-				this.id, this.route);
+				"UserRoute[id='%d', route='%s', lastVisitedNode='%s']", 
+				this.id, this.route, this.lastVisitedNode);
 		
 		return ret;
 	}

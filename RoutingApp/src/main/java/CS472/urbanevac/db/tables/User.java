@@ -12,9 +12,6 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
-import org.hibernate.annotations.Cascade;
-import org.hibernate.annotations.CascadeType;
-
 @Entity
 @Table(name = "[dbo].[User]")
 public class User {
@@ -34,12 +31,12 @@ public class User {
 
 	@ManyToOne
 	@JoinColumn(name = "userGroup", referencedColumnName = "id")
-	@Cascade({CascadeType.SAVE_UPDATE})
-	private UserLocationGroup userGroup;
+	//@Cascade({CascadeType.SAVE_UPDATE})
+	private UserLocationGroup userLocationGroup;
 
 	@OneToOne
 	@JoinColumn(name = "id")
-	@Cascade({CascadeType.SAVE_UPDATE})
+	//@Cascade({CascadeType.SAVE_UPDATE})
 	private UserRoute route;
 	
 	/**
@@ -102,14 +99,14 @@ public class User {
 	 * @return the userGroup
 	 */
 	public UserLocationGroup getUserLocationGroup() {
-		return userGroup;
+		return userLocationGroup;
 	}
 
 	/**
 	 * @param userGroup the userGroup to set
 	 */
 	public void setUserLocationGroup(UserLocationGroup userGroup) {
-		this.userGroup = userGroup;
+		this.userLocationGroup = userGroup;
 	}
 	
 	/**
@@ -130,7 +127,7 @@ public class User {
 	public String toString() {
 		String ret = String.format(
 				"User[id='%d', lat='%f', lon='%f', uid='%s', userGroup='%s', route='%s']", 
-				this.id, this.lat, this.lon, this.uid.toString(), this.userGroup, this.route);
+				this.id, this.lat, this.lon, this.uid.toString(), this.userLocationGroup, this.route);
 		
 		return ret;
 	}

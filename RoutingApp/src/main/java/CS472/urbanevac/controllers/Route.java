@@ -43,6 +43,17 @@ public class Route {
 		return db.openWay(id);
 	}
 	
+	/**
+	 * Updates the last visited node of the user
+	 * 
+	 * @param uid
+	 * @param nodeId
+	 * @return
+	 */
+	@RequestMapping("/update/{uid}/{nodeId}")
+	public @ResponseBody UserRoute updateLastVisitedNode(@PathVariable UUID uid, @PathVariable long nodeId) {
+		return db.updateLastVisitedNode(uid, nodeId);
+	}
 	
 	/**
 	 * Gets the current route for the specified UID

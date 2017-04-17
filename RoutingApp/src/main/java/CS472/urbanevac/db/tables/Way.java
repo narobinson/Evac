@@ -20,11 +20,13 @@ import org.hibernate.annotations.TypeDef;
 import org.hibernate.annotations.TypeDefs;
 
 import CS472.urbanevac.db.Database;
+import CS472.urbanevac.db.types.HstoreUserType;
 import CS472.urbanevac.db.types.LongArrayUserType;
 
 @Entity
 @Table(name = "ways")
 @TypeDefs({
+	@TypeDef(name = "hstore", typeClass = HstoreUserType.class),
 	@TypeDef(name = "longArray", typeClass = LongArrayUserType.class)
 })
 public class Way {
@@ -53,11 +55,6 @@ public class Way {
 	@Type(type = "longArray")
 	@Column(name = "nodes", columnDefinition = "longArray")
 	private long[] nodes;
-	
-/*	@ManyToMany
-	@OrderColumn
-	@JoinColumn(name = "id")
-	private Node[] nodes;*/
 
 	/**
 	 * @return the id
@@ -157,6 +154,11 @@ public class Way {
 		this.nodes = nodes.stream().mapToLong((Node n) -> n.getId()).toArray();
 	}
 	
+	/**
+	 * Returns true if the way is closed.
+	 * 
+	 * @return
+	 */
 	public boolean isClosed() {
 		return this.tags != null && Boolean.parseBoolean(this.tags.get("closed"));
 	}
