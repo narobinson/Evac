@@ -38,11 +38,11 @@ public class DatabaseConnection {
 		this.mssqlSessionFactory.close();
 	}
 	
-	public SessionFactory getPostgresSession() {
-		return this.postgresqlSessionFactory;
+	public DatabaseSession getPostgresSession() {
+		return new DatabaseSession(this.postgresqlSessionFactory.openSession());
 	}
 	
-	public SessionFactory getMSSqlSession() {
-		return this.mssqlSessionFactory;
+	public DatabaseSession getMSSqlSession() {
+		return new DatabaseSession(this.mssqlSessionFactory.openSession());
 	}
 }

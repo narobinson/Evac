@@ -4,9 +4,7 @@ import java.util.List;
 import java.util.UUID;
 
 import javax.annotation.PostConstruct;
-import javax.persistence.NoResultException;
 
-import org.hibernate.Session;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -32,51 +30,38 @@ public class Database {
 
 	/* Node */
 	public List<Node> getAllNodes() {
-		Session session = dbc.getPostgresSession().openSession();
-		session.beginTransaction();
+		DatabaseSession session = dbc.getPostgresSession();
 
 		List<Node> nodes = session
 				.getNamedQuery("getAllNodes")
 				.list();
 
-		session.getTransaction().commit();
 		session.close();
 
 		return nodes;
 	}
 
 	public Node getNodeById(long id) {
-		Session session = dbc.getPostgresSession().openSession();
-		session.beginTransaction();
+		DatabaseSession session = dbc.getPostgresSession();
 
-		Node node = null;
+		Node node = session
+				.getNamedQuery("getNodeById")
+				.setParameter("id", id)
+				.single();
 
-		try {
-			node = (Node) session
-					.getNamedQuery("getNodeById")
-					.setParameter("id", id)
-					.getSingleResult();
-			
-		} catch (NoResultException e) {
-			// Do nothing, node is null
-		}
-
-		session.getTransaction().commit();
 		session.close();
 
 		return node;
 	}
 
 	public List<Node> getNodesByIds(List<Long> ids) {
-		Session session = dbc.getPostgresSession().openSession();
-		session.beginTransaction();
+		DatabaseSession session = dbc.getPostgresSession();
 
 		List<Node> nodes = session
 				.getNamedQuery("getNodeByIds")
 				.setParameterList("idList", ids)
 				.list();
 
-		session.getTransaction().commit();
 		session.close();
 
 		return nodes;
@@ -85,58 +70,40 @@ public class Database {
 
 	/* User */
 	public List<User> getAllUsers() {
-		Session session = dbc.getMSSqlSession().openSession();
-		session.beginTransaction();
+		DatabaseSession session = dbc.getMSSqlSession();
 
 		List<User> users = session
 				.getNamedQuery("getAllUsers")
 				.list();
 
-		session.getTransaction().commit();
 		session.close();
 		
 		return users;
 	}
 
 	public User getUserById(long id) {
-		Session session = dbc.getMSSqlSession().openSession();
-		session.beginTransaction();
+		DatabaseSession session = dbc.getMSSqlSession();
 
 		User user = null;
 
-		try {
-			user = (User) session
-					.getNamedQuery("getUserById")
-					.setParameter("id", id)
-					.getSingleResult();
-			
-		} catch (NoResultException e) {
-			// Do nothing, user is null
-		}
+		user = session
+				.getNamedQuery("getUserById")
+				.setParameter("id", id)
+				.single();
 
-		session.getTransaction().commit();
 		session.close();
 
 		return user;
 	}
 
 	public User getUserByUUID(UUID uid) {
-		Session session = dbc.getMSSqlSession().openSession();
-		session.beginTransaction();
+		DatabaseSession session = dbc.getMSSqlSession();
 
-		User user = null;
+		User user = (User) session
+				.getNamedQuery("getUserByUUID")
+				.setParameter("uid", uid)
+				.single();
 
-		try {
-			user = (User) session
-					.getNamedQuery("getUserByUUID")
-					.setParameter("uid", uid)
-					.getSingleResult();
-			
-		} catch (NoResultException e) {
-			// Do nothing, user is null
-		}
-
-		session.getTransaction().commit();
 		session.close();
 
 		return user;
@@ -146,45 +113,38 @@ public class Database {
 		double glat = Math.floor(ulat * 10000) / 10000;
 		double glon = Math.floor(ulon * 10000) / 10000;
 		
-		Session session = dbc.getMSSqlSession().openSession();
-		session.beginTransaction();
+		DatabaseSession session = dbc.getMSSqlSession();
 
-		User user = null;
-		UserLocationGroup newGroup = null;
-		UserLocationGroup prevGroup = null;
+		// Create the new group for the user to be placed in
+		UserLocationGroup newGroup = (UserLocationGroup) session
+				.getNamedQuery("getUserLocationGroupByLatLon")
+				.setParameter("lat", glat)
+				.setParameter("lon", glon)
+				.single();
 		
+		if (newGroup == null) {
+			// Group didn't exist, so create it
+			System.out.println("Did not find a group for lat: " + glat + " lon: " + glon);
+	
+			newGroup = new UserLocationGroup();
+			newGroup.setLat(glat);
+			newGroup.setLon(glon);
+			newGroup.setCount(0);
+	
+			session.persist(newGroup);
+		}
+		
+		User user = (User) session
+				.getNamedQuery("getUserByUUID")
+				.setParameter("uid", uid)
+				.single();
+
 		// Check to see if the user is already in the database
-		try {
-			user = (User) session
-					.getNamedQuery("getUserByUUID")
-					.setParameter("uid", uid)
-					.getSingleResult();
-			
+		if (user != null) {
 			// This person already exists
 			System.out.println("Person with GUID: " + uid + " already exists");
 
-			// getUserLocationGroupByLatLon
-			newGroup = null;
-			prevGroup = user.getUserLocationGroup();
-			
-			try {
-				newGroup = (UserLocationGroup) session
-						.getNamedQuery("getUserLocationGroupByLatLon")
-						.setParameter("lat", glat)
-						.setParameter("lon", glon)
-						.getSingleResult();
-				
-			} catch (NoResultException e) {
-				// Didn't exist, so create it
-				System.out.println("Did not find a group for lat: " + glat + " lon: " + glon);
-
-				newGroup = new UserLocationGroup();
-				newGroup.setLat(glat);
-				newGroup.setLon(glon);
-				newGroup.setCount(0);
-
-				session.persist(newGroup);
-			}
+			UserLocationGroup prevGroup = user.getUserLocationGroup();
 
 			// Update the location
 			user.setLat(ulat);
@@ -197,28 +157,9 @@ public class Database {
 				
 				user.setUserLocationGroup(newGroup);
 			}
-		} catch (NoResultException e) {
+		} else {
 			// This person didn't exist, add them
 			System.out.println("Adding new person with GUID: " + uid);
-
-			try {
-				newGroup = (UserLocationGroup) session
-						.getNamedQuery("getUserLocationGroupByLatLon")
-						.setParameter("lat", glat)
-						.setParameter("lon", glon)
-						.getSingleResult();
-				
-			} catch (NoResultException e1) {
-				// Didn't exist, so create it
-				System.out.println("Did not find a group for lat: " + glat + " lon: " + glon);
-
-				newGroup = new UserLocationGroup();
-				newGroup.setLat(glat);
-				newGroup.setLon(glon);
-				newGroup.setCount(0);
-
-				session.persist(newGroup);
-			}
 
 			// Create the user
 			user = new User();
@@ -234,7 +175,6 @@ public class Database {
 			session.persist(user);
 		}
 		
-		session.getTransaction().commit();
 		session.close();
 
 		return user;
@@ -243,36 +183,25 @@ public class Database {
 
 	/* User Location Group */
 	public List<UserLocationGroup> getAllUserLocationGroups() {
-		Session session = dbc.getMSSqlSession().openSession();
-		session.beginTransaction();
+		DatabaseSession session = dbc.getMSSqlSession();
 		
 		List<UserLocationGroup> groups = session
 				.getNamedQuery("getAllUserLocationGroups")
 				.list();
 		
-		session.getTransaction().commit();
 		session.close();
 
 		return groups;
 	}
 
 	public UserLocationGroup getUserLocationGroupById(long id) {
-		Session session = dbc.getMSSqlSession().openSession();
-		session.beginTransaction();
+		DatabaseSession session = dbc.getMSSqlSession();
 		
-		UserLocationGroup group = null;
+		UserLocationGroup group = (UserLocationGroup) session
+				.getNamedQuery("getUserLocationGroupById")
+				.setParameter("id", id)
+				.single();
 		
-		try {
-			group = (UserLocationGroup) session
-					.getNamedQuery("getUserLocationGroupById")
-					.setParameter("id", id)
-					.getSingleResult();
-			
-		} catch (NoResultException e) {
-			// Do nothing, group is null
-		}
-		
-		session.getTransaction().commit();
 		session.close();
 
 		return group;
@@ -290,19 +219,15 @@ public class Database {
 		double glat = Math.floor(lat * 10000) / 10000;
 		double glon = Math.floor(lon * 10000) / 10000;
 
-		Session session = dbc.getMSSqlSession().openSession();
-		session.beginTransaction();
+		DatabaseSession session = dbc.getMSSqlSession();
 		
-		UserLocationGroup group = null;
-
-		try {
-			group = (UserLocationGroup) session
-					.getNamedQuery("getUserLocationGroupByLatLon")
-					.setParameter("lat", glat)
-					.setParameter("lon", glon)
-					.getSingleResult();
+		UserLocationGroup group = (UserLocationGroup) session
+				.getNamedQuery("getUserLocationGroupByLatLon")
+				.setParameter("lat", glat)
+				.setParameter("lon", glon)
+				.single();
 			
-		} catch (NoResultException e) {
+		if (group == null) {
 			// Didn't exist, so create it
 			System.out.println("Did not find a group for lat: " + glat + " lon: " + glon);
 
@@ -314,7 +239,6 @@ public class Database {
 			session.persist(group);
 		}
 
-		session.getTransaction().commit();
 		session.close();
 
 		return group;
@@ -323,68 +247,53 @@ public class Database {
 
 	/* User Route */
 	public List<UserRoute> getAllUserRoutes() {
-		Session session = dbc.getMSSqlSession().openSession();
-		session.beginTransaction();
+		DatabaseSession session = dbc.getMSSqlSession();
 		
 		List<UserRoute> routes = session
 				.getNamedQuery("getAllUserRoutes")
 				.list();
 		
-		session.getTransaction().commit();
 		session.close();
 
 		return routes;
 	}
 
 	public UserRoute getUserRouteById(long id) {
-		Session session = dbc.getMSSqlSession().openSession();
-		session.beginTransaction();
+		DatabaseSession session = dbc.getMSSqlSession();
 		
-		UserRoute route = null;
+		UserRoute route = (UserRoute) session
+				.getNamedQuery("getUserRouteById6")
+				.setParameter("id", id)
+				.single();
 		
-		try {
-			route = (UserRoute) session
-					.getNamedQuery("getUserRouteById6")
-					.setParameter("id", id)
-					.getSingleResult();
-			
-		} catch (NoResultException e) {
-			// Do nothing, route is null
-		}
-		
-		session.getTransaction().commit();
 		session.close();
 
 		return route;
 	}
 	
 	public UserRoute updateLastVisitedNode(UUID uid, long nodeId) {
-		Session session = dbc.getMSSqlSession().openSession();
-		session.beginTransaction();
+		DatabaseSession session = dbc.getMSSqlSession();
 
 		UserRoute route = null;
-
-		try {
-			User user = (User) session
-					.getNamedQuery("getUserByUUID")
-					.setParameter("uid", uid)
-					.getSingleResult();
-			
+		
+		User user = (User) session
+				.getNamedQuery("getUserByUUID")
+				.setParameter("uid", uid)
+				.single();
+		
+		if (user != null) {
 			route = user.getRoute();
 			
 			Node node = (Node) session
 					.getNamedQuery("getNodeById")
 					.setParameter("id", nodeId)
-					.getSingleResult();
+					.single();
 			
-			if (route != null) {
+			if (route != null && node != null) {
 				route.setLastVisitedNode(node);
 			}
-		} catch (NoResultException e) {
-			// Do nothing, user is null
 		}
 
-		session.getTransaction().commit();
 		session.close();
 
 		return route;
@@ -393,82 +302,59 @@ public class Database {
 
 	/* Way */
 	public List<Way> getAllWays() {
-		Session session = dbc.getPostgresSession().openSession();
-		session.beginTransaction();
+		DatabaseSession session = dbc.getPostgresSession();
 		
 		List<Way> ret = session
 				.getNamedQuery("getAllWays")
 				.list();
 		
-		session.getTransaction().commit();
 		session.close();
 
 		return ret;
 	}
 
 	public Way getWayById(long id) {
-		Session session = dbc.getPostgresSession().openSession();
-		session.beginTransaction();
+		DatabaseSession session = dbc.getPostgresSession();
 		
-		Way way = null;
+		Way way = (Way) session
+				.getNamedQuery("getWayById")
+				.setParameter("id", id)
+				.single();
 		
-		try {
-			way = (Way) session
-					.getNamedQuery("getWayById")
-					.setParameter("id", id)
-					.getSingleResult();
-			
-		} catch (NoResultException e) {
-			// Do nothing, way is null
-		}
-			
-		session.getTransaction().commit();
 		session.close();
 
 		return way;
 	}
 
 	public boolean closeWay(long id) {
-		Session session = dbc.getPostgresSession().openSession();
-		session.beginTransaction();
+		DatabaseSession session = dbc.getPostgresSession();
 		
-		Way way = null;
+		Way way = (Way) session
+				.getNamedQuery("getWayById")
+				.setParameter("id", id)
+				.single();
 		
-		try {
-			way = (Way) session
-					.getNamedQuery("getWayById")
-					.setParameter("id", id)
-					.getSingleResult();
-
+		if (way != null) {
 			way.getTags().put("closed", Boolean.TRUE.toString());
-		} catch (NoResultException e) {
-			// Do nothing, way is null
 		}
 		
-		session.getTransaction().commit();
 		session.close();
 		
 		return way != null && way.getTags().get("closed") != null && Boolean.parseBoolean(way.getTags().get("closed"));
 	}
 
 	public boolean openWay(long id) {
-		Session session = dbc.getPostgresSession().openSession();
-		session.beginTransaction();
+		DatabaseSession session = dbc.getPostgresSession();
 		
-		Way way = null;
-		
-		try {
-			way = (Way) session
-					.getNamedQuery("getWayById")
-					.setParameter("id", id)
-					.getSingleResult();
-			
+		Way way = (Way) session
+				.getNamedQuery("getWayById")
+				.setParameter("id", id)
+				.single();
+
+		if (way != null) {
 			way.getTags().put("closed", Boolean.FALSE.toString());
-		} catch (NoResultException e) {
-			// Do nothing, way is null
 		}
 
-		session.getTransaction().commit();
 		session.close();
 
 		return way != null && way.getTags().get("closed") != null && Boolean.parseBoolean(way.getTags().get("closed"));
@@ -484,16 +370,12 @@ public class Database {
 	 */
 	public boolean persist(Object o) {
 		if (o instanceof Node || o instanceof Way) {
-			Session session = dbc.getPostgresSession().openSession();
-			session.beginTransaction();
+			DatabaseSession session = dbc.getPostgresSession();
 			session.persist(o);
-			session.getTransaction().commit();
 			session.close();
 		} else if (o instanceof User || o instanceof UserLocationGroup || o instanceof UserRoute) {
-			Session session = dbc.getMSSqlSession().openSession();
-			session.beginTransaction();
+			DatabaseSession session = dbc.getMSSqlSession();
 			session.persist(o);
-			session.getTransaction().commit();
 			session.close();
 		} else {
 			return false;
