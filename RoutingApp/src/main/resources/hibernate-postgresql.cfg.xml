@@ -6,7 +6,7 @@
     <session-factory>
         <property name="hibernate.connection.driver_class">org.postgresql.Driver</property>
         <property name="hibernate.connection.password">osm123</property>
-        <property name="hibernate.connection.url">jdbc:postgresql:OSM</property>
+        <property name="hibernate.connection.url">jdbc:postgresql://10.255.75.118/OSM</property>
         <property name="hibernate.connection.username">OSM</property>
         <property name="hibernate.dialect">org.hibernate.spatial.dialect.postgis.PostgisDialect</property>
 		<property name="hibernate.default_schema">public</property>

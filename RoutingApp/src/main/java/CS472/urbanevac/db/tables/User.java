@@ -1,5 +1,6 @@
 package CS472.urbanevac.db.tables;
 
+import java.util.List;
 import java.util.UUID;
 
 import javax.persistence.Column;
@@ -13,6 +14,8 @@ import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
+
+import CS472.urbanevac.db.Database;
 
 @Entity
 @Table(name = "[dbo].[User]")
@@ -137,6 +140,48 @@ public class User {
 	 */
 	public void setRoute(UserRoute route) {
 		this.route = route;
+	}
+	
+	public Node getLocation() {
+		Node location = new Node();
+		List<Node> allNodes = Database.INSTANCE.getAllNodes();
+		
+		Node closestNode = null;
+		Double distance = 0.0;
+		for (Node node : allNodes) {
+			if (closestNode == null) {
+				closestNode = node;
+				distance = calculateDistance(this.getLat(), this.getLon(), closestNode.getLatitude(), closestNode.getLongitude());
+			} else {
+				Double tempDistance = calculateDistance(this.getLat(), this.getLon(), node.getLatitude(), node.getLongitude());
+				if ( tempDistance < distance){
+					closestNode = node;
+					distance = tempDistance;
+				}
+			}
+		}
+		
+		return location;
+	}
+	
+	private Double calculateDistance(Double lat1, Double lon1, Double lat2, Double lon2) {
+		Double distance = 0.0;
+		int radius = 6371; //Radius of Earth in Km
+		Double dlat = degToRad(lat2 - lat1);
+		Double dlon = degToRad(lon2 - lon1);
+		
+		Double a = Math.sin(dlat/2) * Math.sin(dlat/2) +
+				Math.cos(degToRad(lat1)) * Math.cos(degToRad(lat2)) *
+				Math.sin(dlon/2) * Math.sin(dlon/2);
+		
+		Double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+		distance = radius * c;
+		
+		return distance;
+	}
+	
+	private Double degToRad(Double deg) {
+		return deg * (Math.PI/180);
 	}
 
 	@Override

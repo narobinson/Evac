@@ -1,5 +1,7 @@
 package CS472.urbanevac.db.tables;
 
+import java.util.List;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Map;
 
@@ -21,6 +23,7 @@ import org.hibernate.annotations.TypeDefs;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.vividsolutions.jts.geom.Geometry;
 
+import CS472.urbanevac.db.Database;
 import CS472.urbanevac.db.types.HstoreUserType;
 
 @Entity
@@ -42,7 +45,7 @@ import CS472.urbanevac.db.types.HstoreUserType;
 		query = "SELECT n FROM Node n WHERE n.id IN :idList"
 	)
 })
-public class Node {
+public class Node{
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "id")
@@ -183,5 +186,30 @@ public class Node {
 				this.tags.toString(), this.geom.toString(), this.getLatitude(), this.getLongitude());
 		
 		return ret;
+	}
+	
+	public Double calculateDistance(Node node) {
+		Double distance = 0.0;
+		int radius = 6371; //Radius of Earth in Km
+		Double dlat = degToRad(node.getLatitude() - this.getLatitude());
+		Double dlon = degToRad(node.getLongitude() - this.getLongitude());
+		
+		Double a = Math.sin(dlat/2) * Math.sin(dlat/2) +
+				Math.cos(degToRad(this.getLatitude())) * Math.cos(degToRad(node.getLatitude())) *
+				Math.sin(dlon/2) * Math.sin(dlon/2);
+		
+		Double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+		distance = radius * c;
+		
+		return distance;
+	}
+	
+	private Double degToRad(Double deg) {
+		return deg * (Math.PI/180);
+	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		return (this.id == ((Node) obj).getId());
 	}
 }

@@ -1,5 +1,6 @@
 package CS472.urbanevac.db.tables;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -183,5 +184,104 @@ public class Way {
 				this.tags, this.getNodes());
 		
 		return ret;
+	}
+	
+	public List<Way> getConnectingWays() {
+		List<Way> allWays = Database.INSTANCE.getAllWays();
+		List<Way> adjacentWays = new ArrayList<Way>();
+		
+		for (Way currentWay : allWays) {
+			if (currentWay.getNodes().get(0).getId() == this.getNodes().get(1).getId()) {
+				adjacentWays.add(currentWay);
+			}
+		}
+		
+		return adjacentWays;
+	}
+	
+	public static Way getWayFromNode(Node node) {
+		Way way = null;
+		List<Way> allWays = Database.INSTANCE.getAllWays();
+		
+		for(Way currentWay : allWays) {
+			if (currentWay.getNodes().get(0).equals(node)) {
+				way = currentWay;
+				break;
+			}
+		}
+		
+		return way;
+	}
+	
+	public Way getClosestExitWay() {
+		Way exitWay1 = Database.INSTANCE.getWayById(492057177); //East
+		Way exitWay2 = Database.INSTANCE.getWayById(703595533); //South-West
+		Way exitWay3 = Database.INSTANCE.getWayById(703595967); //North
+		Way[] exitWays = {exitWay1, exitWay2, exitWay3};
+		
+		Way closestWay = null;
+		double shortestDistance = Double.MAX_VALUE;
+		for (Way exitWay : exitWays) {
+			double distance =  this.getNodes().get(1).calculateDistance(exitWay.getNodes().get(0));
+			if (distance < shortestDistance) {
+				shortestDistance = distance;
+				closestWay = exitWay;
+			}
+		}
+		
+		return closestWay;
+	}
+	
+	public void closeWay() {
+		this.tags.put("closed", "true");
+	}
+	
+	public int getMaxSpeed() {
+		String maxSpeed = this.tags.get("maxspeed");
+		if (maxSpeed == null) {
+			maxSpeed = "45";
+		} else {
+			maxSpeed = maxSpeed.substring(0, maxSpeed.indexOf("mph"));
+		}
+		return Integer.parseInt(((maxSpeed != null) ? maxSpeed : "45"));
+	}
+	
+	public int getNumOfLanes() {
+		String lanes = this.tags.get("lanes");
+		return Integer.parseInt(((lanes != null) ? lanes : "1"));
+	}
+	
+	public double getRoadLength() {
+		return this.getNodes().get(0).calculateDistance(this.getNodes().get(1));
+	}
+	
+	public int getNumberOfCars() {
+		String cars = this.tags.get("cars");
+		
+		if (cars == null) {
+			cars = "0";
+		}
+		
+		return Integer.parseInt(cars);
+	}
+	
+	public void incrementNumOfCars() {
+		String cars = this.tags.get("cars");
+		Integer numOfCars = 0;
+		if (cars != null) {
+			numOfCars = Integer.parseInt(cars);
+		}
+		numOfCars++;
+		this.tags.put("cars", numOfCars.toString());
+	}
+	
+	public void decrementNumOfCars() {
+		String cars = this.tags.get("cars");
+		Integer numOfCars = 0;
+		if (cars != null) {
+			numOfCars = Integer.parseInt(cars);
+			numOfCars--;
+		}
+		this.tags.put("cars", numOfCars.toString());
 	}
 }
