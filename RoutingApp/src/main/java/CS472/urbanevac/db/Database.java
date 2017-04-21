@@ -1,5 +1,6 @@
 package CS472.urbanevac.db;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -298,6 +299,19 @@ public class Database {
 
 		return route;
 	}
+	
+	public void updateRoute(long id, String route) {
+		DatabaseSession session = dbc.getPostgresSession();
+		
+		UserRoute r = session
+				.getNamedQuery("getUserRouteById")
+				.setParameter("id", id)
+				.single();
+		
+		r.setRoute(route);
+		
+		session.close();
+	}
 	/* User Route */
 
 	/* Way */
@@ -364,18 +378,58 @@ public class Database {
 	/**
 	 * Persists an object to the correct backing database.
 	 * 
-	 * @param o
+	 * @param objects
 	 *            The object to persist.
 	 * @return True, if the object was persisted.
 	 */
-	public boolean persist(Object o) {
+	public boolean persist(Object... objects) {
+		Object o = new Object();
+		
+		if (objects.length > 0) {
+			o = objects[0];
+		}
+		
 		if (o instanceof Node || o instanceof Way) {
 			DatabaseSession session = dbc.getPostgresSession();
-			session.persist(o);
+			
+			System.out.println("Persiting: " + objects.length);
+			
+			Arrays.asList(objects).stream().forEach((Object no) -> session.persist(no));
+			
 			session.close();
 		} else if (o instanceof User || o instanceof UserLocationGroup || o instanceof UserRoute) {
 			DatabaseSession session = dbc.getMSSqlSession();
-			session.persist(o);
+			
+			Arrays.asList(objects).stream().forEach((Object no) -> session.persist(no));
+
+			session.close();
+		} else {
+			return false;
+		}
+
+		return true;
+	}
+	
+	public boolean delete(Object... objects) {
+		Object o = new Object();
+		
+		if (objects.length > 0) {
+			o = objects[0];
+		}
+		
+		if (o instanceof Node || o instanceof Way) {
+			DatabaseSession session = dbc.getPostgresSession();
+
+			System.out.println("Deleting: " + objects.length);
+			
+			Arrays.asList(objects).stream().forEach((Object no) -> session.getSession().delete(no));
+			
+			session.close();
+		} else if (o instanceof User || o instanceof UserLocationGroup || o instanceof UserRoute) {
+			DatabaseSession session = dbc.getMSSqlSession();
+			
+			Arrays.asList(objects).stream().forEach((Object no) -> session.getSession().delete(no));
+
 			session.close();
 		} else {
 			return false;

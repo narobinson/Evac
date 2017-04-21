@@ -2,6 +2,7 @@ package CS472.urbanevac.db.tables;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -15,7 +16,9 @@ import javax.persistence.NamedQuery;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
-import CS472.urbanevac.db.Database;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import CS472.urbanevac.controllers.Route;
 
 @Entity
 @Table(name = "[dbo].[User]")
@@ -142,9 +145,12 @@ public class User {
 		this.route = route;
 	}
 	
+	@JsonIgnore
 	public Node getLocation() {
-		Node location = new Node();
-		List<Node> allNodes = Database.INSTANCE.getAllNodes();
+		List<Node> allNodes = Route.WAYS.parallelStream()
+				.map((Way w) -> w.getNodes())
+				.flatMap(List::stream)
+				.collect(Collectors.toList());
 		
 		Node closestNode = null;
 		Double distance = 0.0;
@@ -161,9 +167,10 @@ public class User {
 			}
 		}
 		
-		return location;
+		return closestNode;
 	}
-	
+
+	@JsonIgnore
 	private Double calculateDistance(Double lat1, Double lon1, Double lat2, Double lon2) {
 		Double distance = 0.0;
 		int radius = 6371; //Radius of Earth in Km
@@ -179,7 +186,8 @@ public class User {
 		
 		return distance;
 	}
-	
+
+	@JsonIgnore
 	private Double degToRad(Double deg) {
 		return deg * (Math.PI/180);
 	}

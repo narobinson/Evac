@@ -1,5 +1,7 @@
 package CS472.urbanevac.controllers;
 
+import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -139,5 +141,68 @@ public class API {
 	@RequestMapping("/users/add/{uid}/{lat}/{lon}")
 	public @ResponseBody User addUserLocation(@PathVariable UUID uid, @PathVariable double lat, @PathVariable double lon) {
 		return db.addOrUpdateUserLocation(uid, lat, lon);
+	}
+	
+	@RequestMapping("/nuke")
+	public void nuke(){
+		List<Way> ways = db.getAllWays();
+		
+		List<Way> newWays = ways.parallelStream().map((Way w) -> {
+			List<Way> subWays = new LinkedList<>();
+			
+			for (int i = 0; i < w.getNodes().size() - 1; i++) {
+				Way way = new Way();
+				List<Node> nodes = new ArrayList<>(2);
+				
+				nodes.add(w.getNodes().get(i));
+				nodes.add(w.getNodes().get(i + 1));
+				
+				way.setNodes(nodes);
+				way.setTags(w.getTags());
+				way.setTimestamp(w.getTimestamp());
+				way.setChangesetId(w.getChangesetId());
+				way.setUserId(w.getUserId());
+				way.setVersion(w.getVersion());
+				
+				subWays.add(way);
+			}
+			
+			return subWays;
+		}).flatMap(List::stream).collect(Collectors.toList());
+		
+		System.out.println("Old: " + ways.size());
+		System.out.println("New: " + newWays.size());
+		
+		db.persist(newWays.toArray());
+		db.delete(ways.toArray());
+	}
+	
+	@RequestMapping("/delete")
+	public void delete() {
+		List<Node> all = Route.PRIV_NODES;
+		List<Node> toDelete = new LinkedList<>();
+		List<Long> used = new LinkedList<>();
+		
+		Route.PRIV_WAYS.parallelStream().forEach((Way w) -> {
+			used.add(w.getNodes().get(0).getId());
+			used.add(w.getNodes().get(1).getId());
+		});
+		
+		System.out.println("Nodes: " + used.size());
+		
+		for (Node n : all) {
+			if (!used.contains(n.getId())) {
+				toDelete.add(n);
+			}
+		}
+		
+		System.out.println("Delete: " + toDelete.size());
+		
+		db.delete(toDelete.toArray());
+	}
+	
+	@RequestMapping("/debug/{id}")
+	public @ResponseBody List<Way> debug(@PathVariable long id) {
+		return Way.getWaysFromNode(db.getNodeById(id));
 	}
 }

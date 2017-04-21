@@ -1,7 +1,5 @@
 package CS472.urbanevac.db.tables;
 
-import java.util.List;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.Map;
 
@@ -23,7 +21,6 @@ import org.hibernate.annotations.TypeDefs;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.vividsolutions.jts.geom.Geometry;
 
-import CS472.urbanevac.db.Database;
 import CS472.urbanevac.db.types.HstoreUserType;
 
 @Entity
@@ -45,7 +42,7 @@ import CS472.urbanevac.db.types.HstoreUserType;
 		query = "SELECT n FROM Node n WHERE n.id IN :idList"
 	)
 })
-public class Node{
+public class Node{	
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "id")
@@ -188,6 +185,11 @@ public class Node{
 		return ret;
 	}
 	
+	@Override
+	public boolean equals(Object o) {
+		return o instanceof Node && ((Node) o).id == this.id;
+	}
+	
 	public Double calculateDistance(Node node) {
 		Double distance = 0.0;
 		int radius = 6371; //Radius of Earth in Km
@@ -206,10 +208,5 @@ public class Node{
 	
 	private Double degToRad(Double deg) {
 		return deg * (Math.PI/180);
-	}
-	
-	@Override
-	public boolean equals(Object obj) {
-		return (this.id == ((Node) obj).getId());
 	}
 }

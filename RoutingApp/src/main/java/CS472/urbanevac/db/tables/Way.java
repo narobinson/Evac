@@ -1,8 +1,8 @@
 package CS472.urbanevac.db.tables;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -22,6 +22,9 @@ import org.hibernate.annotations.Type;
 import org.hibernate.annotations.TypeDef;
 import org.hibernate.annotations.TypeDefs;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import CS472.urbanevac.controllers.Route;
 import CS472.urbanevac.db.Database;
 import CS472.urbanevac.db.types.HstoreUserType;
 import CS472.urbanevac.db.types.LongArrayUserType;
@@ -44,7 +47,7 @@ import CS472.urbanevac.db.types.LongArrayUserType;
 })
 public class Way {
 	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@GeneratedValue(strategy = GenerationType.AUTO)
 	@Column(name = "id")
 	private long id;
 	
@@ -175,6 +178,11 @@ public class Way {
 	public boolean isClosed() {
 		return this.tags != null && Boolean.parseBoolean(this.tags.get("closed"));
 	}
+
+	@JsonIgnore
+	public List<Way> getConnectingWays() {
+		return Route.WAYS.parallelStream().filter((Way w) -> w.getNodes().get(0).getId() == this.nodes[1]).collect(Collectors.toList());
+	}
 	
 	@Override
 	public String toString() {
@@ -185,25 +193,31 @@ public class Way {
 		
 		return ret;
 	}
-	
-	public List<Way> getConnectingWays() {
-		List<Way> allWays = Database.INSTANCE.getAllWays();
-		List<Way> adjacentWays = new ArrayList<Way>();
-		
-		for (Way currentWay : allWays) {
-			if (currentWay.getNodes().get(0).getId() == this.getNodes().get(1).getId()) {
-				adjacentWays.add(currentWay);
-			}
-		}
-		
-		return adjacentWays;
-	}
-	
+
+//	@JsonIgnore
+//	public List<Way> getConnectingWays() {
+//		List<Way> allWays = Route.WAYS;
+//		List<Way> adjacentWays = new ArrayList<Way>();
+//		
+//		for (Way currentWay : allWays) {
+//			if (currentWay.getNodes().get(0).getId() == this.getNodes().get(1).getId()) {
+//				adjacentWays.add(currentWay);
+//			}
+//		}
+//		
+//		return adjacentWays;
+//	}
+
+	@JsonIgnore
 	public static Way getWayFromNode(Node node) {
 		Way way = null;
-		List<Way> allWays = Database.INSTANCE.getAllWays();
+		List<Way> allWays = Route.WAYS;
 		
 		for(Way currentWay : allWays) {
+//			System.out.println(currentWay);
+//			System.out.println(currentWay.getNodes());
+//			System.out.println(currentWay.getNodes().size());
+			
 			if (currentWay.getNodes().get(0).equals(node)) {
 				way = currentWay;
 				break;
@@ -213,15 +227,25 @@ public class Way {
 		return way;
 	}
 	
-	public Way getClosestExitWay() {
-		Way exitWay1 = Database.INSTANCE.getWayById(492057177); //East
-		Way exitWay2 = Database.INSTANCE.getWayById(703595533); //South-West
-		Way exitWay3 = Database.INSTANCE.getWayById(703595967); //North
-		Way[] exitWays = {exitWay1, exitWay2, exitWay3};
+	@JsonIgnore
+	public static List<Way> getWaysFromNode(Node node) {
+		List<Way> ways = new LinkedList<>();
+		List<Way> allWays = Route.WAYS;
 		
+		for(Way currentWay : allWays) {
+			if (currentWay.getNodes().get(0).equals(node)) {
+				ways.add(currentWay);
+			}
+		}
+		
+		return ways;
+	}
+	
+	@JsonIgnore
+	public Way getClosestExitWay() {
 		Way closestWay = null;
-		double shortestDistance = Double.MAX_VALUE;
-		for (Way exitWay : exitWays) {
+		double shortestDistance = Double.MAX_VALUE;	
+		for (Way exitWay : Route.exitWays) {
 			double distance =  this.getNodes().get(1).calculateDistance(exitWay.getNodes().get(0));
 			if (distance < shortestDistance) {
 				shortestDistance = distance;
@@ -231,30 +255,35 @@ public class Way {
 		
 		return closestWay;
 	}
-	
+
+	@JsonIgnore
 	public void closeWay() {
 		this.tags.put("closed", "true");
 	}
-	
+
+	@JsonIgnore
 	public int getMaxSpeed() {
 		String maxSpeed = this.tags.get("maxspeed");
 		if (maxSpeed == null) {
 			maxSpeed = "45";
 		} else {
-			maxSpeed = maxSpeed.substring(0, maxSpeed.indexOf("mph"));
+			maxSpeed = maxSpeed.substring(0, maxSpeed.indexOf(" "));
 		}
 		return Integer.parseInt(((maxSpeed != null) ? maxSpeed : "45"));
 	}
-	
+
+	@JsonIgnore
 	public int getNumOfLanes() {
 		String lanes = this.tags.get("lanes");
 		return Integer.parseInt(((lanes != null) ? lanes : "1"));
 	}
-	
+
+	@JsonIgnore
 	public double getRoadLength() {
 		return this.getNodes().get(0).calculateDistance(this.getNodes().get(1));
 	}
-	
+
+	@JsonIgnore
 	public int getNumberOfCars() {
 		String cars = this.tags.get("cars");
 		
@@ -264,7 +293,8 @@ public class Way {
 		
 		return Integer.parseInt(cars);
 	}
-	
+
+	@JsonIgnore
 	public void incrementNumOfCars() {
 		String cars = this.tags.get("cars");
 		Integer numOfCars = 0;
@@ -274,7 +304,8 @@ public class Way {
 		numOfCars++;
 		this.tags.put("cars", numOfCars.toString());
 	}
-	
+
+	@JsonIgnore
 	public void decrementNumOfCars() {
 		String cars = this.tags.get("cars");
 		Integer numOfCars = 0;
