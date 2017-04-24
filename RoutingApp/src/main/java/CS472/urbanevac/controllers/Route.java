@@ -45,7 +45,7 @@ public class Route {
 	public static Map<Long, InternalNode> NODES;
 
 	public static InternalNode EXIT_NODE_EAST;	//East
-	public static InternalNode EXIT_NODE_SOUTH; //South-West
+	public static InternalNode EXIT_NODE_SOUTH; //South-West Northbound
 	public static InternalNode EXIT_NODE_NORTH; //North
 	public static InternalNode[] EXIT_NODES = new InternalNode[3];
 	
@@ -145,7 +145,9 @@ public class Route {
 		
 		// Setup the exit nodes
 		EXIT_NODE_EAST = NODES.get(new Long(492057177)); //East
-		EXIT_NODE_SOUTH = NODES.get(new Long(703595533)); //South-West
+//		EXIT_NODE_SOUTH_N = NODES.get(new Long(703595533)); //South-West
+//		EXIT_NODE_SOUTH_S = NODES.get(new Long(87642387)); //South-West
+		EXIT_NODE_SOUTH = NODES.get(new Long(155665302)); //South
 		EXIT_NODE_NORTH = NODES.get(new Long(703595967)); //North
 		EXIT_NODES[0] = EXIT_NODE_EAST;
 		EXIT_NODES[1] = EXIT_NODE_SOUTH;

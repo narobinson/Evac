@@ -164,23 +164,23 @@ public class Database {
 		DatabaseSession session = dbc.getPostgresSession();
 
 		// Create the new group for the user to be placed in
-		UserLocationGroup newGroup = (UserLocationGroup) session
-				.getNamedQuery("getUserLocationGroupByLatLon")
-				.setParameter("lat", glat)
-				.setParameter("lon", glon)
-				.single();
-		
-		if (newGroup == null) {
-			// Group didn't exist, so create it
-			System.out.println("Did not find a group for lat: " + glat + " lon: " + glon);
-	
-			newGroup = new UserLocationGroup();
-			newGroup.setLat(glat);
-			newGroup.setLon(glon);
-			newGroup.setCount(0);
-	
-			session.persist(newGroup);
-		}
+//		UserLocationGroup newGroup = (UserLocationGroup) session
+//				.getNamedQuery("getUserLocationGroupByLatLon")
+//				.setParameter("lat", glat)
+//				.setParameter("lon", glon)
+//				.single();
+//		
+//		if (newGroup == null) {
+//			// Group didn't exist, so create it
+//			System.out.println("Did not find a group for lat: " + glat + " lon: " + glon);
+//	
+//			newGroup = new UserLocationGroup();
+//			newGroup.setLat(glat);
+//			newGroup.setLon(glon);
+//			newGroup.setCount(0);
+//	
+//			session.persist(newGroup);
+//		}
 		
 		User user = (User) session
 				.getNamedQuery("getUserByUUID")
@@ -199,12 +199,12 @@ public class Database {
 			user.setLon(ulon);
 			
 			// If the user moved to a new group, update the counts
-			if (prevGroup.getId() != newGroup.getId()) {
-				prevGroup.decrementCount();
-				newGroup.incrementCount();
-				
-				user.setUserLocationGroup(newGroup);
-			}
+//			if (prevGroup.getId() != newGroup.getId()) {
+//				prevGroup.decrementCount();
+//				newGroup.incrementCount();
+//				
+//				user.setUserLocationGroup(newGroup);
+//			}
 		} else {
 			// This person didn't exist, add them
 			System.out.println("Adding new person with GUID: " + uid);
@@ -214,10 +214,10 @@ public class Database {
 			user.setLat(ulat);
 			user.setLon(ulon);
 			user.setUid(uid);
-			user.setUserLocationGroup(newGroup);
+//			user.setUserLocationGroup(newGroup);
 
 			// Add the user to the group location count
-			newGroup.incrementCount();
+//			newGroup.incrementCount();
 
 			// Add it to the database
 			session.persist(user);

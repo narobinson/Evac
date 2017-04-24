@@ -61,8 +61,9 @@ public class User {
 	@JoinColumn(name = "user_group", referencedColumnName = "id")
 	private UserLocationGroup userLocationGroup;
 
-	@OneToOne
-	@JoinColumn(name = "route", referencedColumnName = "id")
+//	@OneToOne
+//	@JoinColumn(name = "route", referencedColumnName = "id")
+	@Transient
 	private UserRoute route;
 	
 	/**
