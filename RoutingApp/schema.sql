@@ -5,7 +5,7 @@
 -- Dumped from database version 9.6.2
 -- Dumped by pg_dump version 9.6.2
 
--- Started on 2017-04-17 15:59:06
+-- Started on 2017-04-23 18:15:38
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -25,7 +25,7 @@ CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
 
 
 --
--- TOC entry 3654 (class 0 OID 0)
+-- TOC entry 3676 (class 0 OID 0)
 -- Dependencies: 1
 -- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner: 
 --
@@ -34,7 +34,7 @@ COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
 
 
 --
--- TOC entry 2 (class 3079 OID 19548)
+-- TOC entry 3 (class 3079 OID 26433)
 -- Name: hstore; Type: EXTENSION; Schema: -; Owner: 
 --
 
@@ -42,8 +42,8 @@ CREATE EXTENSION IF NOT EXISTS hstore WITH SCHEMA public;
 
 
 --
--- TOC entry 3655 (class 0 OID 0)
--- Dependencies: 2
+-- TOC entry 3677 (class 0 OID 0)
+-- Dependencies: 3
 -- Name: EXTENSION hstore; Type: COMMENT; Schema: -; Owner: 
 --
 
@@ -51,7 +51,7 @@ COMMENT ON EXTENSION hstore IS 'data type for storing sets of (key, value) pairs
 
 
 --
--- TOC entry 3 (class 3079 OID 18075)
+-- TOC entry 2 (class 3079 OID 26556)
 -- Name: postgis; Type: EXTENSION; Schema: -; Owner: 
 --
 
@@ -59,8 +59,8 @@ CREATE EXTENSION IF NOT EXISTS postgis WITH SCHEMA public;
 
 
 --
--- TOC entry 3656 (class 0 OID 0)
--- Dependencies: 3
+-- TOC entry 3678 (class 0 OID 0)
+-- Dependencies: 2
 -- Name: EXTENSION postgis; Type: COMMENT; Schema: -; Owner: 
 --
 
@@ -70,8 +70,8 @@ COMMENT ON EXTENSION postgis IS 'PostGIS geometry, geography, and raster spatial
 SET search_path = public, pg_catalog;
 
 --
--- TOC entry 1435 (class 1255 OID 19725)
--- Name: osmosisupdate(); Type: FUNCTION; Schema: public; Owner: OSM
+-- TOC entry 1437 (class 1255 OID 28197)
+-- Name: osmosisupdate(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
 CREATE FUNCTION osmosisupdate() RETURNS void
@@ -83,10 +83,10 @@ END;
 $$;
 
 
-ALTER FUNCTION public.osmosisupdate() OWNER TO "OSM";
+ALTER FUNCTION public.osmosisupdate() OWNER TO postgres;
 
 --
--- TOC entry 1434 (class 1255 OID 19724)
+-- TOC entry 1438 (class 1255 OID 28030)
 -- Name: unnest_bbox_way_nodes(); Type: FUNCTION; Schema: public; Owner: OSM
 --
 
@@ -116,8 +116,54 @@ SET default_tablespace = '';
 SET default_with_oids = false;
 
 --
--- TOC entry 204 (class 1259 OID 19680)
--- Name: nodes; Type: TABLE; Schema: public; Owner: OSM
+-- TOC entry 209 (class 1259 OID 28232)
+-- Name: app_user_location_groups; Type: TABLE; Schema: public; Owner: OSM
+--
+
+CREATE TABLE app_user_location_groups (
+    id bigint NOT NULL,
+    lat numeric(6,4) NOT NULL,
+    lon numeric(7,4) NOT NULL,
+    count integer NOT NULL
+);
+
+
+ALTER TABLE app_user_location_groups OWNER TO "OSM";
+
+--
+-- TOC entry 210 (class 1259 OID 28237)
+-- Name: app_user_routes; Type: TABLE; Schema: public; Owner: OSM
+--
+
+CREATE TABLE app_user_routes (
+    id bigint NOT NULL,
+    route text NOT NULL,
+    last_visited_node bigint
+);
+
+
+ALTER TABLE app_user_routes OWNER TO "OSM";
+
+--
+-- TOC entry 211 (class 1259 OID 28250)
+-- Name: app_users; Type: TABLE; Schema: public; Owner: OSM
+--
+
+CREATE TABLE app_users (
+    id bigint NOT NULL,
+    lat numeric(10,8) NOT NULL,
+    lon numeric(11,8) NOT NULL,
+    uid uuid NOT NULL,
+    user_group bigint NOT NULL,
+    route bigint
+);
+
+
+ALTER TABLE app_users OWNER TO "OSM";
+
+--
+-- TOC entry 204 (class 1259 OID 28153)
+-- Name: nodes; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE nodes (
@@ -131,11 +177,11 @@ CREATE TABLE nodes (
 );
 
 
-ALTER TABLE nodes OWNER TO "OSM";
+ALTER TABLE nodes OWNER TO postgres;
 
 --
--- TOC entry 208 (class 1259 OID 19701)
--- Name: relation_members; Type: TABLE; Schema: public; Owner: OSM
+-- TOC entry 208 (class 1259 OID 28174)
+-- Name: relation_members; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE relation_members (
@@ -151,11 +197,11 @@ ALTER TABLE ONLY relation_members ALTER COLUMN member_role SET (n_distinct=6500)
 ALTER TABLE ONLY relation_members ALTER COLUMN sequence_id SET (n_distinct=10000);
 
 
-ALTER TABLE relation_members OWNER TO "OSM";
+ALTER TABLE relation_members OWNER TO postgres;
 
 --
--- TOC entry 207 (class 1259 OID 19695)
--- Name: relations; Type: TABLE; Schema: public; Owner: OSM
+-- TOC entry 207 (class 1259 OID 28168)
+-- Name: relations; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE relations (
@@ -168,11 +214,11 @@ CREATE TABLE relations (
 );
 
 
-ALTER TABLE relations OWNER TO "OSM";
+ALTER TABLE relations OWNER TO postgres;
 
 --
--- TOC entry 202 (class 1259 OID 19671)
--- Name: schema_info; Type: TABLE; Schema: public; Owner: OSM
+-- TOC entry 202 (class 1259 OID 28144)
+-- Name: schema_info; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE schema_info (
@@ -180,11 +226,11 @@ CREATE TABLE schema_info (
 );
 
 
-ALTER TABLE schema_info OWNER TO "OSM";
+ALTER TABLE schema_info OWNER TO postgres;
 
 --
--- TOC entry 203 (class 1259 OID 19674)
--- Name: users; Type: TABLE; Schema: public; Owner: OSM
+-- TOC entry 203 (class 1259 OID 28147)
+-- Name: users; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE users (
@@ -193,11 +239,11 @@ CREATE TABLE users (
 );
 
 
-ALTER TABLE users OWNER TO "OSM";
+ALTER TABLE users OWNER TO postgres;
 
 --
--- TOC entry 206 (class 1259 OID 19692)
--- Name: way_nodes; Type: TABLE; Schema: public; Owner: OSM
+-- TOC entry 206 (class 1259 OID 28165)
+-- Name: way_nodes; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE way_nodes (
@@ -210,11 +256,11 @@ ALTER TABLE ONLY way_nodes ALTER COLUMN node_id SET (n_distinct=-0.83);
 ALTER TABLE ONLY way_nodes ALTER COLUMN sequence_id SET (n_distinct=2000);
 
 
-ALTER TABLE way_nodes OWNER TO "OSM";
+ALTER TABLE way_nodes OWNER TO postgres;
 
 --
--- TOC entry 205 (class 1259 OID 19686)
--- Name: ways; Type: TABLE; Schema: public; Owner: OSM
+-- TOC entry 205 (class 1259 OID 28159)
+-- Name: ways; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE ways (
@@ -228,11 +274,38 @@ CREATE TABLE ways (
 );
 
 
-ALTER TABLE ways OWNER TO "OSM";
+ALTER TABLE ways OWNER TO postgres;
 
 --
--- TOC entry 3513 (class 2606 OID 19742)
--- Name: nodes pk_nodes; Type: CONSTRAINT; Schema: public; Owner: OSM
+-- TOC entry 3538 (class 2606 OID 28236)
+-- Name: app_user_location_groups UserLocationGroup_pkey; Type: CONSTRAINT; Schema: public; Owner: OSM
+--
+
+ALTER TABLE ONLY app_user_location_groups
+    ADD CONSTRAINT "UserLocationGroup_pkey" PRIMARY KEY (id);
+
+
+--
+-- TOC entry 3540 (class 2606 OID 28244)
+-- Name: app_user_routes UserRoutes_pkey; Type: CONSTRAINT; Schema: public; Owner: OSM
+--
+
+ALTER TABLE ONLY app_user_routes
+    ADD CONSTRAINT "UserRoutes_pkey" PRIMARY KEY (id);
+
+
+--
+-- TOC entry 3542 (class 2606 OID 28254)
+-- Name: app_users Users_pkey; Type: CONSTRAINT; Schema: public; Owner: OSM
+--
+
+ALTER TABLE ONLY app_users
+    ADD CONSTRAINT "Users_pkey" PRIMARY KEY (id);
+
+
+--
+-- TOC entry 3526 (class 2606 OID 28201)
+-- Name: nodes pk_nodes; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY nodes
@@ -240,8 +313,8 @@ ALTER TABLE ONLY nodes
 
 
 --
--- TOC entry 3523 (class 2606 OID 19750)
--- Name: relation_members pk_relation_members; Type: CONSTRAINT; Schema: public; Owner: OSM
+-- TOC entry 3536 (class 2606 OID 28209)
+-- Name: relation_members pk_relation_members; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY relation_members
@@ -249,8 +322,8 @@ ALTER TABLE ONLY relation_members
 
 
 --
--- TOC entry 3520 (class 2606 OID 19748)
--- Name: relations pk_relations; Type: CONSTRAINT; Schema: public; Owner: OSM
+-- TOC entry 3533 (class 2606 OID 28207)
+-- Name: relations pk_relations; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY relations
@@ -258,8 +331,8 @@ ALTER TABLE ONLY relations
 
 
 --
--- TOC entry 3508 (class 2606 OID 19708)
--- Name: schema_info pk_schema_info; Type: CONSTRAINT; Schema: public; Owner: OSM
+-- TOC entry 3521 (class 2606 OID 28181)
+-- Name: schema_info pk_schema_info; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY schema_info
@@ -267,8 +340,8 @@ ALTER TABLE ONLY schema_info
 
 
 --
--- TOC entry 3510 (class 2606 OID 19740)
--- Name: users pk_users; Type: CONSTRAINT; Schema: public; Owner: OSM
+-- TOC entry 3523 (class 2606 OID 28199)
+-- Name: users pk_users; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY users
@@ -276,8 +349,8 @@ ALTER TABLE ONLY users
 
 
 --
--- TOC entry 3518 (class 2606 OID 19746)
--- Name: way_nodes pk_way_nodes; Type: CONSTRAINT; Schema: public; Owner: OSM
+-- TOC entry 3531 (class 2606 OID 28205)
+-- Name: way_nodes pk_way_nodes; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY way_nodes
@@ -285,8 +358,8 @@ ALTER TABLE ONLY way_nodes
 
 
 --
--- TOC entry 3515 (class 2606 OID 19744)
--- Name: ways pk_ways; Type: CONSTRAINT; Schema: public; Owner: OSM
+-- TOC entry 3528 (class 2606 OID 28203)
+-- Name: ways pk_ways; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY ways
@@ -294,30 +367,57 @@ ALTER TABLE ONLY ways
 
 
 --
--- TOC entry 3511 (class 1259 OID 19751)
--- Name: idx_nodes_geom; Type: INDEX; Schema: public; Owner: OSM
+-- TOC entry 3524 (class 1259 OID 28210)
+-- Name: idx_nodes_geom; Type: INDEX; Schema: public; Owner: postgres
 --
 
 CREATE INDEX idx_nodes_geom ON nodes USING gist (geom);
 
 
 --
--- TOC entry 3521 (class 1259 OID 19753)
--- Name: idx_relation_members_member_id_and_type; Type: INDEX; Schema: public; Owner: OSM
+-- TOC entry 3534 (class 1259 OID 28212)
+-- Name: idx_relation_members_member_id_and_type; Type: INDEX; Schema: public; Owner: postgres
 --
 
 CREATE INDEX idx_relation_members_member_id_and_type ON relation_members USING btree (member_id, member_type);
 
 
 --
--- TOC entry 3516 (class 1259 OID 19752)
--- Name: idx_way_nodes_node_id; Type: INDEX; Schema: public; Owner: OSM
+-- TOC entry 3529 (class 1259 OID 28211)
+-- Name: idx_way_nodes_node_id; Type: INDEX; Schema: public; Owner: postgres
 --
 
 CREATE INDEX idx_way_nodes_node_id ON way_nodes USING btree (node_id);
 
 
--- Completed on 2017-04-17 15:59:07
+--
+-- TOC entry 3543 (class 2606 OID 28245)
+-- Name: app_user_routes FK_UserRoutes_Nodes; Type: FK CONSTRAINT; Schema: public; Owner: OSM
+--
+
+ALTER TABLE ONLY app_user_routes
+    ADD CONSTRAINT "FK_UserRoutes_Nodes" FOREIGN KEY (last_visited_node) REFERENCES nodes(id);
+
+
+--
+-- TOC entry 3544 (class 2606 OID 28255)
+-- Name: app_users FK_Users_UserLocationGroups; Type: FK CONSTRAINT; Schema: public; Owner: OSM
+--
+
+ALTER TABLE ONLY app_users
+    ADD CONSTRAINT "FK_Users_UserLocationGroups" FOREIGN KEY (user_group) REFERENCES app_user_location_groups(id);
+
+
+--
+-- TOC entry 3545 (class 2606 OID 28260)
+-- Name: app_users FK_Users_UserRoutes; Type: FK CONSTRAINT; Schema: public; Owner: OSM
+--
+
+ALTER TABLE ONLY app_users
+    ADD CONSTRAINT "FK_Users_UserRoutes" FOREIGN KEY (route) REFERENCES app_user_routes(id);
+
+
+-- Completed on 2017-04-23 18:15:39
 
 --
 -- PostgreSQL database dump complete

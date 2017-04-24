@@ -44,7 +44,7 @@ import CS472.urbanevac.db.types.HstoreUserType;
 })
 public class Node{	
 	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@GeneratedValue(strategy = GenerationType.AUTO)
 	@Column(name = "id")
 	private long id;
 	
@@ -188,25 +188,5 @@ public class Node{
 	@Override
 	public boolean equals(Object o) {
 		return o instanceof Node && ((Node) o).id == this.id;
-	}
-	
-	public Double calculateDistance(Node node) {
-		Double distance = 0.0;
-		int radius = 6371; //Radius of Earth in Km
-		Double dlat = degToRad(node.getLatitude() - this.getLatitude());
-		Double dlon = degToRad(node.getLongitude() - this.getLongitude());
-		
-		Double a = Math.sin(dlat/2) * Math.sin(dlat/2) +
-				Math.cos(degToRad(this.getLatitude())) * Math.cos(degToRad(node.getLatitude())) *
-				Math.sin(dlon/2) * Math.sin(dlon/2);
-		
-		Double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-		distance = radius * c;
-		
-		return distance;
-	}
-	
-	private Double degToRad(Double deg) {
-		return deg * (Math.PI/180);
 	}
 }

@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import CS472.urbanevac.db.Database;
+import CS472.urbanevac.db.tables.InternalNode;
+import CS472.urbanevac.db.tables.InternalWay;
 import CS472.urbanevac.db.tables.Node;
 import CS472.urbanevac.db.tables.User;
 import CS472.urbanevac.db.tables.UserLocationGroup;
@@ -31,8 +33,8 @@ public class API {
 	 * @return
 	 */
 	@RequestMapping("/nodes")
-	public @ResponseBody List<Node> getNodes() {
-		return db.getAllNodes();
+	public @ResponseBody List<InternalNode> getNodes() {
+		return new ArrayList<>(Route.NODES.values());
 	}
 	
 	/**
@@ -42,8 +44,8 @@ public class API {
 	 * @return
 	 */
 	@RequestMapping("/nodes/{id}")
-	public @ResponseBody Node getNodeById(@PathVariable long id) {
-		return db.getNodeById(id);
+	public @ResponseBody InternalNode getNodeById(@PathVariable long id) {
+		return Route.NODES.get(new Long(id));
 	}
 	
 	/**
@@ -52,8 +54,8 @@ public class API {
 	 * @return
 	 */
 	@RequestMapping("/ways")
-	public @ResponseBody List<Way> getWays() {
-		return db.getAllWays();
+	public @ResponseBody List<InternalWay> getWays() {
+		return new ArrayList<>(Route.WAYS.values());
 	}
 	
 	/**
@@ -63,18 +65,18 @@ public class API {
 	 * @return
 	 */
 	@RequestMapping("/ways/{id}")
-	public @ResponseBody Way getWayById(@PathVariable long id) {
-		return db.getWayById(id);
+	public @ResponseBody InternalWay getWayById(@PathVariable long id) {
+		return Route.WAYS.get(new Long(id));
 	}
 	
 	/**
-	 * Gets all of the closed ways
+	 * Gets all of the closed nodes
 	 * 
 	 * @return
 	 */
 	@RequestMapping("/closed")
-	public @ResponseBody List<Way> getClosedWays() {
-		return db.getAllWays().stream().filter((Way w) -> w.getTags() != null && Boolean.parseBoolean(w.getTags().get("closed"))).collect(Collectors.toList());
+	public @ResponseBody List<InternalNode> getClosedNodes() {
+		return new ArrayList<>(Route.NODES.values()).stream().filter(n -> n.isClosed()).collect(Collectors.toList());
 	}
 	
 	/**
@@ -177,32 +179,32 @@ public class API {
 		db.delete(ways.toArray());
 	}
 	
-	@RequestMapping("/delete")
-	public void delete() {
-		List<Node> all = Route.PRIV_NODES;
-		List<Node> toDelete = new LinkedList<>();
-		List<Long> used = new LinkedList<>();
-		
-		Route.PRIV_WAYS.parallelStream().forEach((Way w) -> {
-			used.add(w.getNodes().get(0).getId());
-			used.add(w.getNodes().get(1).getId());
-		});
-		
-		System.out.println("Nodes: " + used.size());
-		
-		for (Node n : all) {
-			if (!used.contains(n.getId())) {
-				toDelete.add(n);
-			}
-		}
-		
-		System.out.println("Delete: " + toDelete.size());
-		
-		db.delete(toDelete.toArray());
-	}
-	
-	@RequestMapping("/debug/{id}")
-	public @ResponseBody List<Way> debug(@PathVariable long id) {
-		return Way.getWaysFromNode(db.getNodeById(id));
-	}
+//	@RequestMapping("/delete")
+//	public void delete() {
+//		List<Node> all = Route.PRIV_NODES;
+//		List<Node> toDelete = new LinkedList<>();
+//		List<Long> used = new LinkedList<>();
+//		
+//		Route.PRIV_WAYS.parallelStream().forEach((Way w) -> {
+//			used.add(w.getNodes().get(0).getId());
+//			used.add(w.getNodes().get(1).getId());
+//		});
+//		
+//		System.out.println("Nodes: " + used.size());
+//		
+//		for (Node n : all) {
+//			if (!used.contains(n.getId())) {
+//				toDelete.add(n);
+//			}
+//		}
+//		
+//		System.out.println("Delete: " + toDelete.size());
+//		
+//		db.delete(toDelete.toArray());
+//	}
+//	
+//	@RequestMapping("/debug/{id}")
+//	public @ResponseBody List<Way> debug(@PathVariable long id) {
+//		return Way.getWaysFromNode(db.getNodeById(id));
+//	}
 }

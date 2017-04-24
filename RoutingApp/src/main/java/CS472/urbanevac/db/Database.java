@@ -67,11 +67,45 @@ public class Database {
 
 		return nodes;
 	}
+	
+	public boolean closeNode(long id) {
+		DatabaseSession session = dbc.getPostgresSession();
+		
+		Node node = (Node) session
+				.getNamedQuery("getNodeById")
+				.setParameter("id", id)
+				.single();
+		
+		if (node != null) {
+			node.getTags().put("closed", Boolean.TRUE.toString());
+		}
+		
+		session.close();
+		
+		return node != null && node.getTags().get("closed") != null && Boolean.parseBoolean(node.getTags().get("closed"));
+	}
+	
+	public boolean openNode(long id) {
+		DatabaseSession session = dbc.getPostgresSession();
+		
+		Node node = (Node) session
+				.getNamedQuery("getNodeById")
+				.setParameter("id", id)
+				.single();
+		
+		if (node != null) {
+			node.getTags().put("closed", Boolean.FALSE.toString());
+		}
+		
+		session.close();
+		
+		return node != null && node.getTags().get("closed") != null && Boolean.parseBoolean(node.getTags().get("closed"));
+	}
 	/* Node */
 
 	/* User */
 	public List<User> getAllUsers() {
-		DatabaseSession session = dbc.getMSSqlSession();
+		DatabaseSession session = dbc.getPostgresSession();
 
 		List<User> users = session
 				.getNamedQuery("getAllUsers")
@@ -83,7 +117,7 @@ public class Database {
 	}
 
 	public User getUserById(long id) {
-		DatabaseSession session = dbc.getMSSqlSession();
+		DatabaseSession session = dbc.getPostgresSession();
 
 		User user = null;
 
@@ -98,7 +132,7 @@ public class Database {
 	}
 
 	public User getUserByUUID(UUID uid) {
-		DatabaseSession session = dbc.getMSSqlSession();
+		DatabaseSession session = dbc.getPostgresSession();
 
 		User user = (User) session
 				.getNamedQuery("getUserByUUID")
@@ -109,12 +143,25 @@ public class Database {
 
 		return user;
 	}
+	
+	public void setUserRoute(UUID id, UserRoute route) {
+		DatabaseSession session = dbc.getPostgresSession();
+		
+		User user = (User) session
+				.getNamedQuery("getUserByUUID")
+				.setParameter("uid", id)
+				.single();
+		
+		user.setRoute(route);
+		
+		session.close();
+	}
 
 	public User addOrUpdateUserLocation(UUID uid, double ulat, double ulon) {
 		double glat = Math.floor(ulat * 10000) / 10000;
 		double glon = Math.floor(ulon * 10000) / 10000;
 		
-		DatabaseSession session = dbc.getMSSqlSession();
+		DatabaseSession session = dbc.getPostgresSession();
 
 		// Create the new group for the user to be placed in
 		UserLocationGroup newGroup = (UserLocationGroup) session
@@ -184,7 +231,7 @@ public class Database {
 
 	/* User Location Group */
 	public List<UserLocationGroup> getAllUserLocationGroups() {
-		DatabaseSession session = dbc.getMSSqlSession();
+		DatabaseSession session = dbc.getPostgresSession();
 		
 		List<UserLocationGroup> groups = session
 				.getNamedQuery("getAllUserLocationGroups")
@@ -196,7 +243,7 @@ public class Database {
 	}
 
 	public UserLocationGroup getUserLocationGroupById(long id) {
-		DatabaseSession session = dbc.getMSSqlSession();
+		DatabaseSession session = dbc.getPostgresSession();
 		
 		UserLocationGroup group = (UserLocationGroup) session
 				.getNamedQuery("getUserLocationGroupById")
@@ -220,7 +267,7 @@ public class Database {
 		double glat = Math.floor(lat * 10000) / 10000;
 		double glon = Math.floor(lon * 10000) / 10000;
 
-		DatabaseSession session = dbc.getMSSqlSession();
+		DatabaseSession session = dbc.getPostgresSession();
 		
 		UserLocationGroup group = (UserLocationGroup) session
 				.getNamedQuery("getUserLocationGroupByLatLon")
@@ -248,7 +295,7 @@ public class Database {
 
 	/* User Route */
 	public List<UserRoute> getAllUserRoutes() {
-		DatabaseSession session = dbc.getMSSqlSession();
+		DatabaseSession session = dbc.getPostgresSession();
 		
 		List<UserRoute> routes = session
 				.getNamedQuery("getAllUserRoutes")
@@ -260,10 +307,10 @@ public class Database {
 	}
 
 	public UserRoute getUserRouteById(long id) {
-		DatabaseSession session = dbc.getMSSqlSession();
+		DatabaseSession session = dbc.getPostgresSession();
 		
 		UserRoute route = (UserRoute) session
-				.getNamedQuery("getUserRouteById6")
+				.getNamedQuery("getUserRouteById")
 				.setParameter("id", id)
 				.single();
 		
@@ -273,7 +320,7 @@ public class Database {
 	}
 	
 	public UserRoute updateLastVisitedNode(UUID uid, long nodeId) {
-		DatabaseSession session = dbc.getMSSqlSession();
+		DatabaseSession session = dbc.getPostgresSession();
 
 		UserRoute route = null;
 		
@@ -308,7 +355,7 @@ public class Database {
 				.setParameter("id", id)
 				.single();
 		
-		r.setRoute(route);
+		r.setRawRoute(route);
 		
 		session.close();
 	}
@@ -398,7 +445,7 @@ public class Database {
 			
 			session.close();
 		} else if (o instanceof User || o instanceof UserLocationGroup || o instanceof UserRoute) {
-			DatabaseSession session = dbc.getMSSqlSession();
+			DatabaseSession session = dbc.getPostgresSession();
 			
 			Arrays.asList(objects).stream().forEach((Object no) -> session.persist(no));
 
@@ -426,7 +473,7 @@ public class Database {
 			
 			session.close();
 		} else if (o instanceof User || o instanceof UserLocationGroup || o instanceof UserRoute) {
-			DatabaseSession session = dbc.getMSSqlSession();
+			DatabaseSession session = dbc.getPostgresSession();
 			
 			Arrays.asList(objects).stream().forEach((Object no) -> session.getSession().delete(no));
 

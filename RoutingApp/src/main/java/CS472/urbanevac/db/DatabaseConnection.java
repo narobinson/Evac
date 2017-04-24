@@ -23,13 +23,16 @@ public class DatabaseConnection {
 		Configuration postgresql = new Configuration().configure("/hibernate-postgresql.cfg.xml");
 		postgresql.addAnnotatedClass(Node.class);
 		postgresql.addAnnotatedClass(Way.class);
+		postgresql.addAnnotatedClass(User.class);
+		postgresql.addAnnotatedClass(UserLocationGroup.class);
+		postgresql.addAnnotatedClass(UserRoute.class);
 		this.postgresqlSessionFactory = postgresql.buildSessionFactory();
 		
-		Configuration mssql = new Configuration().configure("/hibernate-mssql.cfg.xml");
-		mssql.addAnnotatedClass(User.class);
-		mssql.addAnnotatedClass(UserLocationGroup.class);
-		mssql.addAnnotatedClass(UserRoute.class);
-		this.mssqlSessionFactory = mssql.buildSessionFactory();
+//		Configuration mssql = new Configuration().configure("/hibernate-mssql.cfg.xml");
+//		mssql.addAnnotatedClass(User.class);
+//		mssql.addAnnotatedClass(UserLocationGroup.class);
+//		mssql.addAnnotatedClass(UserRoute.class);
+//		this.mssqlSessionFactory = mssql.buildSessionFactory();
 	}
 	
 	@PreDestroy

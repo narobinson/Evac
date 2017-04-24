@@ -1,17 +1,26 @@
 package CS472.urbanevac.controllers;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 
+import org.apache.commons.lang3.time.StopWatch;
+import org.jboss.logging.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -19,6 +28,8 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import CS472.urbanevac.db.Database;
+import CS472.urbanevac.db.tables.InternalNode;
+import CS472.urbanevac.db.tables.InternalWay;
 import CS472.urbanevac.db.tables.Node;
 import CS472.urbanevac.db.tables.User;
 import CS472.urbanevac.db.tables.UserRoute;
@@ -30,113 +41,153 @@ public class Route {
 	@Autowired
 	private Database db;
 
-	public static List<Way> WAYS;
-	public static List<Node> NODES;
+	public static Map<Long, InternalWay> WAYS;
+	public static Map<Long, InternalNode> NODES;
+
+	public static InternalNode EXIT_NODE_EAST;	//East
+	public static InternalNode EXIT_NODE_SOUTH; //South-West
+	public static InternalNode EXIT_NODE_NORTH; //North
+	public static InternalNode[] EXIT_NODES = new InternalNode[3];
 	
-	public static List<Way> PRIV_WAYS;
-	public static List<Node> PRIV_NODES;
-
-
-	public static Way exitWay1;	//East
-	public static Way exitWay2; //South-West
-	public static Way exitWay3; //North
-	public static Way[] exitWays = new Way[2];
+	public static Map<Long, Map<Long, Long>> ADJ_MATRIX = new ConcurrentHashMap<>();			// Maps node IDs to adjacent nodes and the way that made them adjacent
+	
+	private static Logger logger = Logger.getLogger(Route.class);
 	
 	@PostConstruct
-	public void setup() {
-		PRIV_WAYS = db.getAllWays();
-		List<Way> newWays = new ArrayList<>(PRIV_WAYS.size());
+	public void setup() throws IOException {
+		logger.info("Loading nodes and ways from database.");
 		
-		PRIV_WAYS.stream().forEach((Way w) -> {
-			Way way = new Way();
-			way.setChangesetId(w.getChangesetId());
-			way.setId(w.getId());
-			way.setNodes(w.getNodes());
-			way.setTags(w.getTags());
-			way.setTimestamp(w.getTimestamp());
-			way.setUserId(w.getUserId());
-			way.setVersion(w.getVersion());
-			newWays.add(way);
-		});
+		List<Node> nodes = db.getAllNodes();
+		List<Way> ways = db.getAllWays();
 		
-		PRIV_NODES = db.getAllNodes();
-		List<Node> newNodes = new ArrayList<>(PRIV_NODES.size());
+		logger.info("Loaded " + nodes.size() + " nodes and " + ways.size() + " ways.");
+
+		logger.info("Creating in-memory nodes and ways...");
 		
-		PRIV_NODES.stream().forEach((Node n) -> {
-			Node node = new Node();
-			node.setChangesetId(n.getChangesetId());
-			node.setGeom(n.getGeom());
-			node.setId(n.getId());
-			node.setTags(n.getTags());
-			node.setTimestamp(n.getTimestamp());
-			node.setUserId(n.getUserId());
-			node.setVersion(n.getVersion());
-			newNodes.add(node);
-		});
+		// Create the in-memory representation of Nodes and Ways
+		NODES = nodes.parallelStream().map((Node n) -> {
+			logger.debug("Converting node: " + n.getId());
+			return new InternalNode(n);
+		}).collect(Collectors.toMap((InternalNode n) -> n.getId(), (InternalNode n) -> n));
+		WAYS = ways.parallelStream().map((Way n) -> {
+			logger.debug("Converting way: " + n.getId());
+			InternalWay way = new InternalWay(n);
+			
+			if (way.getStartNode() != null && way.getEndNode() != null) {
+				return way;
+			} else {
+				return null;
+			}
+		}).filter(Objects::nonNull).collect(Collectors.toMap((InternalWay w) -> w.getId(), (InternalWay w) -> w));
 		
-		WAYS = Collections.unmodifiableList(newWays);
-		NODES = Collections.unmodifiableList(newNodes);
+//		.filter(w -> w.getTags() != null && w.getTags().containsKey("highway"))
 		
-		exitWay1 = Way.getWayFromNode(db.getNodeById(492057177)); //East
-		exitWay2 = Way.getWayFromNode(db.getNodeById(703595533)); //South-West
-		exitWay3 = Way.getWayFromNode(db.getNodeById(703595967)); //North
-		exitWays[0] = exitWay2;
-		exitWays[1] = exitWay3;
-		//exitWays[2] = exitWay3;
-		
-		System.out.println(Arrays.toString(exitWays));
-		
-//		WAYS.parallelStream().forEach((Way w1) -> {
-//			System.out.println(count);
-//			
-//			WAYS.parallelStream().forEach((Way w2) -> {
-//				if (w1.getNodes().get(0).getId() == w2.getNodes().get(1).getId()) {
-//					w1.addConnectingWays(w2);
-//					w2.addConnectingWays(w1);
-//				}
-//			});
-//			
-//			System.out.println(count++);
+		logger.info("Finished creating in-memory nodes and ways.");
+		logger.info("Nodes: " + NODES.size() + " Ways: " + WAYS.size());
+
+		// Setup the lists to hold the adjacent nodes
+		logger.info("Creating mappings for all used nodes...");
+//		NODES.values().parallelStream().forEach((InternalNode n) -> {
+//			logger.debug("Creating mapping for node: " + n.getId());
+//			ADJ_MATRIX.put(n.getId(), new ConcurrentHashMap<>());
 //		});
+		WAYS.values().parallelStream().forEach(w -> {
+			logger.debug("Creating mapping for node: " + w.getStartNode().getId());
+			ADJ_MATRIX.put(w.getStartNode().getId(), new ConcurrentHashMap<>());
+			
+			logger.debug("Creating mapping for node: " + w.getEndNode().getId());
+			ADJ_MATRIX.put(w.getEndNode().getId(), new ConcurrentHashMap<>());
+		});
+		logger.info("Finished creating mappings for all used nodes.");
+
+		logger.info("Removing unused nodes...");
+		NODES = NODES.keySet().parallelStream().filter(n -> ADJ_MATRIX.containsKey(n)).collect(Collectors.toMap(n -> n, n -> NODES.get(n)));
+		logger.info("Unused nodes removed.");
+		
+		logger.info("Adjacent node matrix has " + ADJ_MATRIX.size() + " entries.");
+		
+		logger.info("Loading adjacent nodes...");
+		// Load the adjacent nodes
+		new ArrayList<>(WAYS.values()).parallelStream().forEach((InternalWay w) -> {
+			logger.debug("Processing way: " + w.getId());
+			Map<Long, Long> first = ADJ_MATRIX.get(w.getStartNode().getId());
+			Map<Long, Long> second = ADJ_MATRIX.get(w.getEndNode().getId());
+			
+			if (first == null) {
+				logger.error("No mapping exists for " + w.getStartNode().getId() + ". Creating a new mapping.");
+				first = new ConcurrentHashMap<>();
+				ADJ_MATRIX.put(w.getStartNode().getId(), first);
+			}
+			if (second == null) {
+				logger.error("No mapping exists for " + w.getStartNode().getId() + ". Creating a new mapping.");
+				second = new ConcurrentHashMap<>();
+				ADJ_MATRIX.put(w.getEndNode().getId(), second);
+			}
+			
+			first.put(w.getEndNode().getId(), w.getId());
+			second.put(w.getStartNode().getId(), w.getId());
+		});
+		logger.info("Finished loading adjacent nodes.");
+
+		File matrixFile = new File("Matrix.txt");
+		File nodeFile = new File("Nodes.txt");
+		File wayFile = new File("Ways.txt");
+
+		logger.info("Saving matrix to file: " + matrixFile.getAbsolutePath());
+		logger.info("Saving nodes to file: " + nodeFile.getAbsolutePath());
+		logger.info("Saving ways to file: " + wayFile.getAbsolutePath());
+
+		Files.write(matrixFile.toPath(), ADJ_MATRIX.toString().getBytes(), StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
+		Files.write(nodeFile.toPath(), NODES.toString().getBytes(), StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
+		Files.write(wayFile.toPath(), WAYS.toString().getBytes(), StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
+		
+		logger.info("Loading global exit nodes...");
+		
+		// Setup the exit nodes
+		EXIT_NODE_EAST = NODES.get(new Long(492057177)); //East
+		EXIT_NODE_SOUTH = NODES.get(new Long(703595533)); //South-West
+		EXIT_NODE_NORTH = NODES.get(new Long(703595967)); //North
+		EXIT_NODES[0] = EXIT_NODE_EAST;
+		EXIT_NODES[1] = EXIT_NODE_SOUTH;
+		EXIT_NODES[2] = EXIT_NODE_NORTH;
+		
+		logger.info("Finished loading global exit nodes: " + Arrays.toString(EXIT_NODES));
 	}
 	
 	/**
-	 * Closes a way with the given ID
+	 * Closes a node with the given ID
 	 * 
 	 * @param id
 	 * @return
 	 */
 	@RequestMapping("/close/{id}")
 	public @ResponseBody boolean closeRoad(@PathVariable long id) {
-		boolean closed = db.closeWay(id);
+//		boolean closed = db.closeWay(id);
+//		WAYS.get(new Long(id)).closeWay();
 		
-		List<User> allUsers = db.getAllUsers();
-		for (User user : allUsers) {
-			String route = user.getRoute().getRoute();
-			String[] ways = route.split("$");
-			for (String way : ways) {
-				long wayId = Long.parseLong(way.substring(way.indexOf('&') + 1));
-				Way wayObject = db.getWayById(wayId);
-				wayObject.closeWay();
-				if (wayId == id) {
-					UserRoute newRoute = calculateRoute(user, user.getRoute().getLastVisitedNode());
-					user.setRoute(newRoute);
-				}
-			}
-		}
+		boolean closed = db.closeNode(id);
+		NODES.get(new Long(id)).close();
+		
+		db.getAllUsers().stream().filter(Util::routeContainsClosedNode).forEach(u -> {
+			logger.info("Closing way: " + id + " has caused " + u.getUid() + "'s route to be recalculated.");
+			calculateRoute(u);
+		});
 		
 		return closed;
 	}
 	
 	/**
-	 * Opens a way with the given ID
+	 * Opens a node with the given ID
 	 * 
 	 * @param id
 	 * @return
 	 */
 	@RequestMapping("/open/{id}")
 	public @ResponseBody boolean openRoad(@PathVariable long id) {
-		return db.openWay(id);
+		boolean closed = db.openNode(id);
+		NODES.get(new Long(id)).open();
+		
+		return closed;
 	}
 	
 	/**
@@ -160,112 +211,136 @@ public class Route {
 	@RequestMapping("/{uid}")
 	public @ResponseBody UserRoute getRoute(@PathVariable UUID uid) {
 		User user = db.getUserByUUID(uid);
+		
+		if (user == null) {
+			logger.error("User: " + uid + " requested a route but is not enrolled in the system.");
+			return null;
+		}
+		
 		UserRoute route = user.getRoute();
 		
+		logger.info("User: " + uid + " has requested a route.");
+		
 		if (route == null) {
-			route = this.calculateRoute(user, null);
+			logger.info("No route stored for " + uid + ". Calulating a new route.");
+			
+			StopWatch sw = new StopWatch();
+			sw.start();
+			
+			route = this.calculateRoute(user);
+			
+			sw.stop();
+			logger.info("Calculated the route for " + uid + " in " + sw.getTime() + "ms. Contains " + route.getRoute().size() + " nodes.");
 		}
 		
 		return route;
 	}
 	
-	public UserRoute calculateRoute(User user, Node lastVisited) {
+	public UserRoute calculateRoute(User user) {
 		UserRoute route = new UserRoute();
-		Way userLocation;
-		if (lastVisited != null) {
-			userLocation = Way.getWayFromNode(lastVisited);
-		} else {
-			userLocation = Way.getWayFromNode(user.getLocation());
+		InternalNode startLocation = null;
+		
+		if (user.getRoute() != null) {
+			startLocation = user.getRoute().getLastVisitedNode();
 		}
 		
-		System.out.println(userLocation);
+		if (startLocation == null) {
+			startLocation = user.getLocation();
+		}
 		
-		Way goal = userLocation.getClosestExitWay();
-
-		System.out.println(user.getLocation());
-		System.out.println(goal);
+		InternalNode goal = Util.getClosestExitNode(startLocation);
 		
-		Set<Way> closedSet = new HashSet<Way>();
-		Set<Way> openSet = new HashSet<Way>();
-		openSet.add(userLocation);
-		Map<Way, Way> cameFrom = new HashMap<Way, Way>();
+		logger.info(user.getUid() + "'s start location: " + startLocation);
+		logger.info(user.getUid() + "'s end location: " + goal);
 		
-		Map<Way, Integer> gScore = new HashMap<Way, Integer>();
-		gScore.put(userLocation, 0);
+		Set<InternalNode> closedSet = new HashSet<>();
+		Set<InternalNode> openSet = new HashSet<>();
+		openSet.add(startLocation);
+		Map<InternalNode, InternalNode> cameFrom = new HashMap<>();
 		
-		Map<Way, Integer> fScore = new HashMap<Way, Integer>();
-		fScore.put(userLocation, userLocation.getNodes().get(1).calculateDistance(goal.getNodes().get(0)).intValue());
+		Map<InternalNode, Integer> gScore = new HashMap<>();
+		gScore.put(startLocation, 0);
 		
-		Way currentWay = null;
+		Map<InternalNode, Integer> fScore = new HashMap<>();
+		fScore.put(startLocation, (int) Util.calculateDistance(startLocation, goal));
+		
+		InternalNode currentNode = null;
 		while (openSet.isEmpty() == false) {
-			Way wayWithLowestFScore = null;
-			for (Object iteratedWay : openSet.toArray()) {
-				Way way = (Way) iteratedWay;
-				if (wayWithLowestFScore == null) {
-					wayWithLowestFScore = way;
+			InternalNode nodeWithLowestFScore = null;
+			for (InternalNode node : openSet) {
+				if (nodeWithLowestFScore == null) {
+					nodeWithLowestFScore = node;
 				} else {
-					if (fScore.get(way) < fScore.get(wayWithLowestFScore)) {
-						wayWithLowestFScore = way;
+					if (fScore.get(node) < fScore.get(nodeWithLowestFScore)) {
+						nodeWithLowestFScore = node;
 					}
 				}
 			}
 			
-			currentWay = wayWithLowestFScore;
-			if (currentWay.equals(goal)) {
+			currentNode = nodeWithLowestFScore;
+			if (currentNode.equals(goal)) {
 				break;
 			}
 			
-			openSet.remove(currentWay);
-			closedSet.add(currentWay);
+			openSet.remove(currentNode);
+			closedSet.add(currentNode);
 
-			System.out.println("Current way: " + currentWay);
+			List<InternalNode> adjacentNodes = Route.ADJ_MATRIX.get(currentNode.getId()).keySet().parallelStream().map((Long id) -> Route.NODES.get(id)).collect(Collectors.toList());
 			
-			List<Way> adjacentWays = currentWay.getConnectingWays();
-			
-			System.out.println("Adjacent ways: " + adjacentWays.size());
-			
-			for (Way adjacentWay : adjacentWays) {
-				if (closedSet.contains(adjacentWay) || adjacentWay.isClosed()) {
+			for (InternalNode adjacentNode : adjacentNodes) {
+				if (closedSet.contains(adjacentNode) || Route.WAYS.get(Route.ADJ_MATRIX.get(currentNode.getId()).get(adjacentNode.getId())).isClosed() || adjacentNode.isClosed()) {
 					continue;
 				} else {
-					Integer tentativeGScore = gScore.get(currentWay) + calculateHeuristic(currentWay, adjacentWay, goal).intValue();
+					int tentativeGScore = (int) (gScore.get(currentNode) + calculateHeuristic(currentNode, adjacentNode, goal));
 					
-					if (openSet.contains(adjacentWay) == false) {
-						openSet.add(adjacentWay);
-					} else if (tentativeGScore >= gScore.get(adjacentWay)) {
+					if (openSet.contains(adjacentNode) == false) {
+						openSet.add(adjacentNode);
+					} else if (tentativeGScore >= gScore.get(adjacentNode)) {
 						continue;
 					}
 					
-					cameFrom.put(adjacentWay, currentWay);
-					gScore.put(adjacentWay, tentativeGScore);
-					fScore.put(adjacentWay, gScore.get(adjacentWay) + adjacentWay.getNodes().get(1).calculateDistance(goal.getNodes().get(0)).intValue());
+					cameFrom.put(adjacentNode, currentNode);
+					gScore.put(adjacentNode, tentativeGScore);
+					fScore.put(adjacentNode, gScore.get(adjacentNode) + (int) Util.calculateDistance(adjacentNode, goal));
 				}
 			}
 		}
 		
-		System.out.println("Came from: " + cameFrom.size());
+		List<InternalNode> totalPath = new LinkedList<>();
+		totalPath.add(currentNode);
 		
-		// Route will consist of concatenated ways which will contain their lat, lon, and id, to produce a string that looks like:
-		// "$LAT126112LON123123&12312412"
-		for (Map.Entry<Way, Way> entry : cameFrom.entrySet()) {
-			Way start = entry.getValue();
-			start.incrementNumOfCars();
-			route.setRoute(route.getRoute() + "$" + start.getNodes().get(0).getId() + "|" + start.getNodes().get(1).getId() + "&" + start.getId());
+		while (cameFrom.containsKey(currentNode)) {
+			currentNode = cameFrom.get(currentNode);
+			totalPath.add(0, currentNode);
 		}
-		goal.incrementNumOfCars();
-		route.setRoute(route.getRoute() + "$" + goal.getNodes().get(0).getId() + "|" + goal.getNodes().get(1).getId() + "&" + goal.getId());
+		
+		totalPath.stream().map(n -> "$" + n.getId()).forEachOrdered(s -> {
+			route.setRawRoute(route.getRawRoute() == null ? "" : route.getRawRoute() + s);
+		});
+		
+//		for (Map.Entry<InternalNode, InternalNode> entry : cameFrom.entrySet()) {
+//			Route.WAYS.get(Route.ADJ_MATRIX.get(entry.getValue().getId()).get(entry.getKey().getId())).incrementNumOfCars();
+//			
+//			route.setRawRoute((route.getRawRoute() == null ? "" : route.getRawRoute()) + "$" +  entry.getValue().getId());
+//		}
+//		route.setRawRoute(route.getRawRoute() + "$" + goal.getId());
+		
+		db.persist(route);
+		db.setUserRoute(user.getUid(), route);
 		
 		return route;
 	}
 	
-	private Double calculateHeuristic(Way begin, Way end, Way goal) {
-		Double distanceToGoal = begin.getNodes().get(1).calculateDistance(goal.getNodes().get(0));
-		int numCars = end.getNumberOfCars();
-		double endsRoadLength = end.getRoadLength();
-		int maxSpeed = end.getMaxSpeed();
-		int lanes = end.getNumOfLanes();
-		Double estimatedSpeed = (-0.2) * Math.pow(Math.E, ((0.73529 * (numCars/endsRoadLength)/(maxSpeed * lanes)) + maxSpeed));
+	private double calculateHeuristic(InternalNode begin, InternalNode end, InternalNode goal) {
+		InternalWay endWay = Route.WAYS.get(Route.ADJ_MATRIX.get(begin.getId()).get(end.getId()));
 		
-		return distanceToGoal/estimatedSpeed;
+		double distanceToGoal = Util.calculateDistance(begin, goal);
+		int numCars = endWay.getNumberOfCars();
+		double endsRoadLength = endWay.getRoadLength();
+		int maxSpeed = endWay.getMaxSpeed();
+		int lanes = endWay.getNumOfLanes();
+		double estimatedSpeed = (-0.2) * Math.pow(Math.E, ((0.73529 * (numCars/endsRoadLength)/(maxSpeed * lanes)) + maxSpeed));
+		
+		return distanceToGoal / estimatedSpeed;
 	}
 }

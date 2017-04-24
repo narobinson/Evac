@@ -1,18 +1,28 @@
 package CS472.urbanevac.db.tables;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 
-import CS472.urbanevac.db.Database;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import CS472.urbanevac.controllers.Route;
 
 @Entity
-@Table(name = "[dbo].[UserRoute]")
+@Table(name = "app_user_routes")
 @NamedQueries({
 	@NamedQuery(
 		name = "getAllUserRoutes",
@@ -25,15 +35,16 @@ import CS472.urbanevac.db.Database;
 })
 public class UserRoute {
 	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@GeneratedValue(strategy = GenerationType.AUTO)
 	@Column(name = "id")
 	private long id;
 	
 	@Column(name = "route")
 	private String route;
 
-	@Column(name = "lastVisitedNode")
-	private Long lastVisitedNode;
+	@ManyToOne
+	@JoinColumn(name = "last_visited_node", referencedColumnName = "id")
+	private Node lastVisitedNode;
 	
 	/**
 	 * @return the id
@@ -52,36 +63,45 @@ public class UserRoute {
 	/**
 	 * @return the route
 	 */
-	public String getRoute() {
+	@JsonIgnore
+	public String getRawRoute() {
 		return route;
 	}
 
 	/**
 	 * @param route the route to set
 	 */
-	public void setRoute(String route) {
+	public void setRawRoute(String route) {
 		this.route = route;
+	}
+	
+	public List<InternalNode> getRoute() {
+		if (this.route == null) {
+			return null;
+		}
+		
+		return Arrays.asList(this.route.split(Pattern.quote("$"))).parallelStream().filter(s -> s.length() != 0).map(s -> Route.NODES.get(Long.parseLong(s))).filter(Objects::nonNull).collect(Collectors.toList());
 	}
 
 	/**
 	 * @return the lastVisitedNode
 	 */
-	public Node getLastVisitedNode() {
-		return this.lastVisitedNode == null ? null : Database.INSTANCE.getNodeById(this.lastVisitedNode);
+	public InternalNode getLastVisitedNode() {
+		return this.lastVisitedNode == null ? null : Route.NODES.get(this.lastVisitedNode.getId());
 	}
 	
 	/**
 	 * @param lastVisitedNode the lastVisitedNode to set
 	 */
 	public void setLastVisitedNode(Node lastVisitedNode) {
-		this.lastVisitedNode = lastVisitedNode.getId();
+		this.lastVisitedNode = lastVisitedNode;
 	}
 
 	@Override
 	public String toString() {
 		String ret = String.format(
-				"UserRoute[id='%d', route='%s', lastVisitedNode='%s']", 
-				this.id, this.route, this.lastVisitedNode);
+				"UserRoute[id='%d', rawRoute='%s' route='%s', lastVisitedNode='%s']", 
+				this.id, this.route, this.getRoute(), this.lastVisitedNode);
 		
 		return ret;
 	}

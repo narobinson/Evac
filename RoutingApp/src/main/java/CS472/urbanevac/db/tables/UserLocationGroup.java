@@ -10,7 +10,7 @@ import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 
 @Entity
-@Table(name = "[dbo].[UserLocationGroup]")
+@Table(name = "app_user_location_groups")
 @NamedQueries({
 	@NamedQuery(
 		name = "getAllUserLocationGroups",
@@ -27,7 +27,7 @@ import javax.persistence.Table;
 })
 public class UserLocationGroup {
 	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@GeneratedValue(strategy = GenerationType.AUTO)
 	@Column(name = "id")
 	private long id;
 	

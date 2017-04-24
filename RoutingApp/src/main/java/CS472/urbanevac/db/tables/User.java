@@ -1,8 +1,7 @@
 package CS472.urbanevac.db.tables;
 
-import java.util.List;
+import java.util.Collection;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -15,13 +14,17 @@ import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
+import javax.persistence.Transient;
+
+import org.jboss.logging.Logger;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import CS472.urbanevac.controllers.Route;
+import CS472.urbanevac.controllers.Util;
 
 @Entity
-@Table(name = "[dbo].[User]")
+@Table(name = "app_users")
 @NamedQueries({
 	@NamedQuery(
 		name = "getAllUsers",
@@ -37,8 +40,11 @@ import CS472.urbanevac.controllers.Route;
 	)
 })
 public class User {
+	@Transient
+	private static Logger logger = Logger.getLogger(User.class);
+	
 	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@GeneratedValue(strategy = GenerationType.AUTO)
 	@Column(name = "id")
 	private long id;
 	
@@ -52,13 +58,11 @@ public class User {
 	private UUID uid;
 
 	@ManyToOne
-	@JoinColumn(name = "userGroup", referencedColumnName = "id")
-	//@Cascade({CascadeType.SAVE_UPDATE})
+	@JoinColumn(name = "user_group", referencedColumnName = "id")
 	private UserLocationGroup userLocationGroup;
 
 	@OneToOne
-	@JoinColumn(name = "id")
-	//@Cascade({CascadeType.SAVE_UPDATE})
+	@JoinColumn(name = "route", referencedColumnName = "id")
 	private UserRoute route;
 	
 	/**
@@ -134,6 +138,7 @@ public class User {
 	/**
 	 * @return the route
 	 */
+	@JsonIgnore
 	public UserRoute getRoute() {
 		return route;
 	}
@@ -146,21 +151,19 @@ public class User {
 	}
 	
 	@JsonIgnore
-	public Node getLocation() {
-		List<Node> allNodes = Route.WAYS.parallelStream()
-				.map((Way w) -> w.getNodes())
-				.flatMap(List::stream)
-				.collect(Collectors.toList());
+	public InternalNode getLocation() {
+		Collection<InternalNode> allNodes = Route.NODES.values();
 		
-		Node closestNode = null;
-		Double distance = 0.0;
-		for (Node node : allNodes) {
+		InternalNode closestNode = null;
+		double distance = 0.0;
+		
+		for (InternalNode node : allNodes) {
 			if (closestNode == null) {
 				closestNode = node;
-				distance = calculateDistance(this.getLat(), this.getLon(), closestNode.getLatitude(), closestNode.getLongitude());
+				distance = Util.calculateDistance(this.getLat(), this.getLon(), closestNode.getLatitude(), closestNode.getLongitude());
 			} else {
-				Double tempDistance = calculateDistance(this.getLat(), this.getLon(), node.getLatitude(), node.getLongitude());
-				if ( tempDistance < distance){
+				double tempDistance = Util.calculateDistance(this.getLat(), this.getLon(), node.getLatitude(), node.getLongitude());
+				if (tempDistance < distance) {
 					closestNode = node;
 					distance = tempDistance;
 				}
@@ -170,33 +173,11 @@ public class User {
 		return closestNode;
 	}
 
-	@JsonIgnore
-	private Double calculateDistance(Double lat1, Double lon1, Double lat2, Double lon2) {
-		Double distance = 0.0;
-		int radius = 6371; //Radius of Earth in Km
-		Double dlat = degToRad(lat2 - lat1);
-		Double dlon = degToRad(lon2 - lon1);
-		
-		Double a = Math.sin(dlat/2) * Math.sin(dlat/2) +
-				Math.cos(degToRad(lat1)) * Math.cos(degToRad(lat2)) *
-				Math.sin(dlon/2) * Math.sin(dlon/2);
-		
-		Double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-		distance = radius * c;
-		
-		return distance;
-	}
-
-	@JsonIgnore
-	private Double degToRad(Double deg) {
-		return deg * (Math.PI/180);
-	}
-
 	@Override
 	public String toString() {
 		String ret = String.format(
 				"User[id='%d', lat='%f', lon='%f', uid='%s', userGroup='%s', route='%s']", 
-				this.id, this.lat, this.lon, this.uid.toString(), this.userLocationGroup, this.route);
+				this.id, this.lat, this.lon, this.uid.toString(), this.userLocationGroup, this.route == null);
 		
 		return ret;
 	}
